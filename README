@@ -1,0 +1,53 @@
+MRS-Client
+
+This module is a SOAP-based (Web Services) client that can talk, and
+get data from an "MRS server", a search engine for biological and
+medical databanks that searches well over a terabyte of indexed
+text. See details about MRS and its author Maarten Hekkelman in
+"ACKNOWLEDGMENTS" of "perldoc MRS::Client".
+
+Because this module is only a client, you need an MRS server
+running. You can install your own (see details in the MRS
+distribution), or you need to know a site that runs it. By default,
+this module contacts the MRS server at CMBI (http://mrs.cmbi.ru.nl/).
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+	perl Makefile.PL [INSTALL_BASE=/where/to/install]
+	make
+	make test
+	make install
+
+SUPPORT AND DOCUMENTATION
+
+After installing, you can find documentation for this module with the
+perldoc command.
+
+    perldoc MRS::Client
+
+You can also look for information at:
+
+    RT, CPAN's request tracker
+        http://rt.cpan.org/NoAuth/Bugs.html?Dist=MRS-Client
+
+    AnnoCPAN, Annotated CPAN documentation
+        http://annocpan.org/dist/MRS-Client
+
+    CPAN Ratings
+        http://cpanratings.perl.org/d/MRS-Client
+
+    Search CPAN
+        http://search.cpan.org/dist/MRS-Client
+
+
+COPYRIGHT AND LICENCE
+
+Copyright (c) 2010, Martin Senger, KAUST (King Abdullah University of
+Science and Technology)
+All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself
+(http://www.perl.com/perl/misc/Artistic.html).

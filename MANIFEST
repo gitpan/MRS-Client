@@ -1,0 +1,25 @@
+ChangeLog
+MANIFEST
+Makefile.PL
+README
+lib/MRS/Client.pm
+lib/MRS/Client.pod
+lib/MRS/Constants.pm
+lib/MRS/admin.wsdl.template
+lib/MRS/blast.wsdl.template
+lib/MRS/clustal.wsdl.template
+lib/MRS/search.wsdl.template
+lib/MRS/Client/Databank.pm
+lib/MRS/Client/Clustal.pm
+lib/MRS/Client/Blast.pm
+lib/MRS/Client/blast.result.xml.template
+lib/MRS/Client/Find.pm
+scripts/mrsclient
+scripts/mrsblast
+scripts/mrsclustal
+t/00-load.t
+t/01-data.t
+t/02-endpoint.t
+t/03-network.t
+t/pod.t
+META.yml                                 Module meta-data (added by MakeMaker)
