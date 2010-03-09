@@ -90,7 +90,7 @@ sub check {
 package MRS::Operator;
 
 use constant {
-    CONTAINS       => 'CONTAINS',
+    CONTAINS       => ':',
     LT             => 'LT',
     LE             => 'LE',
     EQ             => 'EQ',
@@ -113,12 +113,13 @@ sub contains {
     my ($class, $query) = @_;
     return 0 unless $query;
     my $regex =
-	CONTAINS . '|' . UNION . '|' . INTERSECTION .
+	UNION . '|' . INTERSECTION .
 	'|' . LT . '|' . LE. '|' . EQ . '|' . GT . '|' . GE .
 	'|' . NOT . '|' . '|' . OR . '|' . AND .
 	'|' . ADJACENT . '|' . CONTAINSSTRING;
-    my $regex_c = qr/\W+($regex)\W+/;
-    $query =~ $regex_c;
+    my $regex_c1 = qr/\W+($regex)\W+/;
+    my $regex_c2 = qr/:/;
+    $query =~ $regex_c1 or $query =~ $regex_c2;
 }
 
 #-----------------------------------------------------------------

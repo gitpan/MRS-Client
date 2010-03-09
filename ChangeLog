@@ -1,3 +1,10 @@
+2010-03-09  Martin Senger  <martin.senger&#64;gmail.com>
+
+	* Released version.53
+
+	* Fixed queries using prefixes separated by a colon (such as
+	os:human)
+
 2010-03-02  Martin Senger  <martin.senger&#64;gmail.com>
 
 	* Released version 0.52 - uploaded to CPAN

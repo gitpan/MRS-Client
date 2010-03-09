@@ -1225,30 +1225,6 @@ then the boolean query was used and, as explained by the MRS, the
 matches". But, fortunately, when you iterate over this result, you
 will get, correctly, just the 134 entries.
 
-Finally, I am not yet sure how to use correctly the prefixes of the
-specified fields, such as "os:human". At the moment, this
-
-   find (query => 'rds AND os:human')
-
-works (but as a boolean query, not as a ranked query as it does in the
-I<mrsweb>). But this one:
-
-   find (and => ['rds', 'os:human'])
-
-does not work.
-
-=item *
-
-In order to get total counts of entries in one or all databanks, you
-use:
-
-   print $client->db('uniprot')->count;
-   print $client->count;
-
-The results are the same as by I<mrsweb> - but perhaps the internal
-implementation in the C<MRS::Client> is sub-optimal. I may optimize it
-when I understand better how it should be done.
-
 =item *
 
 The MRS servers provide few more operations that are not-yet covered

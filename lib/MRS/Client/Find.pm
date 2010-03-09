@@ -74,6 +74,10 @@ sub new {
 	and $self->{max_entries} = 0
 	if $self->{max_entries} < 0;
 
+    # 'and' and 'or' should be refarrays
+    $self->{and} = [ $self->{and} ] if $self->{and} and not ref ($self->{and});
+    $self->{or} = [ $self->{or} ] if $self->{or} and not ref ($self->{or});
+
     warn ("Both 'and' and 'or' parameters given. The latter ignored.\n")
 	and delete ($self->{or})
 	if defined $self->{and} and defined $self->{or};
@@ -83,6 +87,21 @@ sub new {
 	MRS::Operator->contains ($self->{query}) or
 	(defined $self->{and} and @{ $self->{and} } > 0) or
 	(defined $self->{or} and @{ $self->{or} } > 0);
+
+    # if some terms contain boolean operators, move them to query
+    if (defined $self->{and}) {
+    	my @terms = ();
+    	while (my $term = shift (@{ $self->{and} })) {
+    	    if (MRS::Operator->contains ($term)) {
+    		$self->{query} = '' unless defined $self->{query};
+    		$self->{query} .= ' AND ' if $self->{query};
+    		$self->{query} .= $term;
+    	    } else {
+    		push (@terms, $term);
+    	    }
+    	}
+	push (@{ $self->{and} }, $_) foreach @terms;
+    }
 
     $self->{terms} = ($self->{and} or $self->{or});
     $self->{all_terms_required} = ($self->{and} ? 1 : 0);

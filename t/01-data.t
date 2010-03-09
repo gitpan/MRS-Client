@@ -1,7 +1,7 @@
 #!perl -T
 
 #use Test::More qw(no_plan);
-use Test::More tests => 61;
+use Test::More tests => 76;
 
 BEGIN {
     use_ok ('MRS::Client');
@@ -127,3 +127,23 @@ foreach my $algorithm (MRS::Algorithm->VECTOR,
     local $SIG{__WARN__} = sub { like ($_[0], qr/both/i, 'Find: both And and OR') };
     $find = MRS::Client::Find->new (and => 'some', or => 'any');
 }
+
+$find = MRS::Client::Find->new (and => ['rds', 'os:human']);
+is (@{ $find->terms }, 1,               'Find: bools in terms');
+is ($find->terms->[0], 'rds',           'Find: bools in terms 2');
+is ($find->query, 'os:human',           'Find: bools in terms 3');
+ok ($find->all_terms_required,          'Find: bools in terms 4');
+$find = MRS::Client::Find->new (and => ['os:human']);
+is (@{ $find->terms }, 0,               'Find: bools in terms 5');
+is ($find->query, 'os:human',           'Find: bools in terms 6');
+ok ($find->all_terms_required,          'Find: bools in terms 7');
+$find = MRS::Client::Find->new (and => 'os:human');
+is (@{ $find->terms }, 0,               'Find: bools in terms 8');
+is ($find->query, 'os:human',           'Find: bools in terms 9');
+ok ($find->all_terms_required,          'Find: bools in terms 10');
+$find = MRS::Client::Find->new (and => ['rds', 'os:human', 'os:rat', 'des']);
+is (@{ $find->terms }, 2,               'Find: bools in terms 11');
+is ($find->terms->[0], 'rds',           'Find: bools in terms 12');
+is ($find->terms->[1], 'des',           'Find: bools in terms 12');
+is ($find->query, 'os:human AND os:rat','Find: bools in terms 13');
+ok ($find->all_terms_required,          'Find: bools in terms 14');
