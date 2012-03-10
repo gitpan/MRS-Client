@@ -21,5 +21,7 @@ t/00-load.t
 t/01-data.t
 t/02-endpoint.t
 t/03-network.t
-t/pod.t
+t/04-links.t
+t/data/DNP_DENAN.html
+t/data/VE6_HPV16.html
 META.yml                                 Module meta-data (added by MakeMaker)

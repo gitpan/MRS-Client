@@ -60,6 +60,32 @@ sub check {
 
 #-----------------------------------------------------------------
 #
+#  MRS::XFormat ... enumeration of extended format options
+#
+#-----------------------------------------------------------------
+package MRS::XFormat;
+
+use constant {
+    CSS_CLASS   => 'css_class',
+    URL_PREFIX  => 'url_prefix',
+    REMOVE_DEAD => 'remove_dead_links',
+    ONLY_LINKS  => 'only_links',
+};
+
+#-----------------------------------------------------------------
+# Return 1 only if $format is one of the recognized constants
+# -----------------------------------------------------------------
+sub check {
+    my ($class, $format) = @_;
+    return 0 unless $format;
+    my $regex =
+	CSS_CLASS . '|' . URL_PREFIX . '|' . REMOVE_DEAD . '|' . ONLY_LINKS;
+    my $regex_c = qr/^($regex)$/;
+    $format =~ $regex_c;
+}
+
+#-----------------------------------------------------------------
+#
 #  MRS::Algorithm ... enumeration of scoring algorithms
 #
 #-----------------------------------------------------------------

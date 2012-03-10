@@ -1,3 +1,15 @@
+2010-06-28  Martin Senger  <martin.senger&#64;gmail.com>
+
+	* Released version 0.60
+
+	* Added xformat option for the HTML output.
+
+	* Updated documentation.
+
+2010-03-15  Martin Senger  <martin.senger&#64;gmail.com>
+
+	* Fixed option -i when used together with -f option (in mrsclient)
+
 2010-03-09  Martin Senger  <martin.senger&#64;gmail.com>
 
 	* Released version.53

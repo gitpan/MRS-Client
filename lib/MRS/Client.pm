@@ -27,7 +27,7 @@ use MRS::Client::Clustal;
 #-----------------------------------------------------------------
 # Global variables (available for all packages in this file)
 #-----------------------------------------------------------------
-our $VERSION = '0.53';
+use version; our $VERSION = 0.600000;
 
 #-----------------------------------------------------------------
 # A list of allowed options/arguments (used in the new() method)

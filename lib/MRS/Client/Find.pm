@@ -177,7 +177,7 @@ sub _process_hit {
     if ($self->{format} eq MRS::EntryFormat->HEADER) {
 	return $hit;
     } else {
-	return $self->{dbobj}->entry ($hit->{id}, $self->{format});
+	return $self->{dbobj}->entry ($hit->{id}, $self->{format}, $self->{xformat});
     }
 }
 
@@ -338,7 +338,7 @@ sub next {
 
 #-----------------------------------------------------------------
 #
-#  MRS::Client::Hit ... container for basisc of a found result
+#  MRS::Client::Hit ... container for basics of a found result
 #
 #-----------------------------------------------------------------
 package MRS::Client::Hit;

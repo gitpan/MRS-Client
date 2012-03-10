@@ -45,7 +45,7 @@ where 'options' are:
    -q <expr>      boolean expression that will be used
                   either on its own, or as a filter for
                   results obtained by -a or -o
-   -f <format>    format of the outpup databank entries
+   -f <format>    format of the output databank entries
                   (header, title, plain, html, fasta, sequence)
    -A <algorithm> a scoring algorithm computing result
                   document relevance (Vector, Dice, Jaccard)
@@ -176,7 +176,7 @@ push (@find_args, format => $opt_f) if $opt_f;
 push (@find_args, algorithm => $opt_A) if $opt_A;
 push (@find_args, max_entries => $opt_m) if $opt_m;
 push (@find_args, start => $opt_s) if $opt_s;
-if (@find_args > 0) {
+if (@find_args > 0 and not $opt_i) {
     # make query
     my $find;
     if ($opt_d) {

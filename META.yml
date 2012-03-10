@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               MRS-Client
-version:            0.53
+version:            0.6
 abstract:           A SOAP-based client accessing MRS databases
 author:
     - Martin Senger <martin.senger@gmail.com>
@@ -21,7 +21,7 @@ no_index:
     directory:
         - t
         - inc
-generated_by:       ExtUtils::MakeMaker version 6.50
+generated_by:       ExtUtils::MakeMaker version 6.56
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html
     version:  1.4

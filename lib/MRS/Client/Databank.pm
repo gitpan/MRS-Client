@@ -47,9 +47,11 @@ sub count     { return shift->_populate_count->{count}; }
 sub version {
     my $self = shift;
     my $r = '';
-    foreach my $file (@{ $self->files }) {
-	$r .= ', ' if $r;
-	$r .= $file->version;
+    if ($self->files) {
+	foreach my $file (@{ $self->files }) {
+	    $r .= ', ' if $r;
+	    $r .= $file->version;
+	}
     }
     return $r;
 }
@@ -159,10 +161,11 @@ sub find {
 }
 
 #-----------------------------------------------------------------
-# Get an entry defined by $entry_id in the $format (optional).
-#-----------------------------------------------------------------
+# Get an entry defined by $entry_id in the $format (optional). Some
+# formats may have extended options in $xformat.
+# -----------------------------------------------------------------
 sub entry {
-    my ($self, $entry_id, $format) = @_;
+    my ($self, $entry_id, $format, $xformat) = @_;
 
     croak "Empty entry ID. Cannot do anything, I am afraid.\n"
 	unless $entry_id;
@@ -179,7 +182,62 @@ sub entry {
 	  id => $entry_id,
 	  format => $format });
     return '' unless defined $answer;
-    return $answer->{parameters}->{entry};
+    if ($xformat and $format eq MRS::EntryFormat->HTML) {
+        return $self->_xformat ($xformat, $answer->{parameters}->{entry});
+    } else {
+        return $answer->{parameters}->{entry};
+    }
+}
+
+#
+sub _xformat {
+    my ($self, $xformat, $html) = @_;
+
+    # in these case, the returned content will be different from the given $html
+    my $change_wanted = ( $xformat->{MRS::XFormat::CSS_CLASS()}    or
+			  $xformat->{MRS::XFormat::REMOVE_DEAD()}  or
+			  $xformat->{MRS::XFormat::URL_PREFIX} );
+
+    # in this case, we need a list of available databanks
+    # (which may be already provided in $xformat itself)
+    if ($xformat->{MRS::XFormat::REMOVE_DEAD()}) {
+	if (ref ($xformat->{MRS::XFormat::REMOVE_DEAD()}) ne 'ARRAY' ) {
+	    $xformat->{MRS::XFormat::REMOVE_DEAD()} = [map { $_->id } $self->{client}->db];
+	}
+	# internally, change it to a hashref
+	$xformat->{'_dbs_'} = { map { $_ => 1 } @{ $xformat->{MRS::XFormat::REMOVE_DEAD()} } };
+    }
+
+    my $regex = '(<a (?:.+?)</a>)';
+    if ($xformat->{MRS::XFormat::ONLY_LINKS()}) {
+	my @links = ( $html =~ m{$regex}migo );
+	if ($change_wanted) {
+	    return [ map { $self->_change_link ($xformat, $_) } @links ];
+	} else {
+	    return \@links
+	}
+    } else {
+	$html =~ s{$regex}{$self->_change_link ($xformat, $1)}emigo;
+	return $html;
+    }
+}
+
+#
+sub _change_link {
+    my ($self, $xformat, $link) = @_;
+    if (my $class = $xformat->{css_class}) {
+	$link =~ s/(<a )/$1class="$class" /oi;
+    }
+    if ($xformat->{url_prefix}) {
+	$link =~ s{(href=")(query|entry)}{$1$xformat->{url_prefix}$2}oi;
+    }
+    if ($xformat->{remove_dead_links}) {
+	my ($db) = $link =~ m{[.]do[?]db=(\w+?)&amp;}o;
+	if ($db and not $xformat->{'_dbs_'}->{$db}) {
+	    $link =~ s{<[^>]*>}{}g;
+	}
+    }
+    return $link;
 }
 
 #-----------------------------------------------------------------

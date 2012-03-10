@@ -35,7 +35,7 @@ MRS::Client - A SOAP-based client accessing MRS databases
 
     # show id, relevance score and title of two terms connected by AND
     my $query = $client->db ('enzyme')->find (and => ['snake', 'human'],
-					      format => MRS::EntryFormat->HEADER);
+					      'format' => MRS::EntryFormat->HEADER);
     while (my $record = $query->next) {
        print $record . "\n";
     }
@@ -43,7 +43,7 @@ MRS::Client - A SOAP-based client accessing MRS databases
 
     # ...show only title, but now the same two terms are connected by OR
     my $query = $client->db ('enzyme')->find (or => ['snake', 'human'],
-					      format => MRS::EntryFormat->TITLE);
+					      'format' => MRS::EntryFormat->TITLE);
     while (my $record = $query->next) {
        print $record . "\n";
     }
@@ -56,7 +56,7 @@ MRS::Client - A SOAP-based client accessing MRS databases
     # combine term-based (ranked) query with additional boolean expression
     my $query = $client->db ('uniprot')->find (and => ['snake', 'human'],
                                                query => 'NOT (kinase OR reductase)',
-                                               format => MRS::EntryFormat->HEADER);
+                                               'format' => MRS::EntryFormat->HEADER);
     print "Count: " . $query->count . "\n";
     while (my $record = $query->next) {
        print $record . "\n";
@@ -300,7 +300,7 @@ for the I<find> method called for an individual databank (see below).
 
    print "Databank\tID\tScore\tTitle\n";
    my $query = $client->find (and => ['cone', 'snail'],
-                              format => MRS::EntryFormat->HEADER);
+                              'format' => MRS::EntryFormat->HEADER);
    while (my
       $record = $query->next) {
       print $record . "\n";
@@ -329,7 +329,7 @@ databank separately:
 
    my $query = $client->find (and => ['cone', 'snail'],
                               max_entries => 2,
-                              format => MRS::EntryFormat->HEADER);
+                              'format' => MRS::EntryFormat->HEADER);
    while (my
       $record = $query->next) {
       print $record . "\n";
@@ -357,44 +357,6 @@ F<MRS::Client::Blast>.
    $client->clustal
 
 A factory method for creating instances of F<MRS::Client::Clustal>.
-
-
-    Je to dost velky rozdil. Oba skvele terenaky. Land Cruiser je velke auto, povazovane za jeden z nejlepsich terennich vozu. Land Rover je taky dobry auto, ale skoro bych tipoval, ze mysleli tu Toyotu. Land Rover, potom, co zacal delat nove motory (ktere uz nesly opravovat kladivem) hodne ztratil na povesti.
-
-    Btw. gratuluji ke stehovani. Usetris dost casu a to je fajn.
-
-    Kdyz tak ctu ty tvoje postrehy, uz vim, co budes moct delat, abys pak nemusel doma "koukat do zdi" - jak rikas.
-    Bude z toho pekna knizka a muzes jezdit po kulturacich jako Leos Simanek.
-
-    Drzim palce, at se ti tam vede.
-    Mej se fajn,
-    Filip
-
-
-
-    > ------------ Původní zpráva ------------
-    > Od: Martin Senger <martin.senger@gmail.com>
-    > Předmět: poznamky o vikendovem vyletu
-    > Datum: 19.2.2010 22:20:10
-    > ----------------------------------------
-    > Vsem ahoj a par fotek a poznamek z jezdeni pousti terennimi jeepy:
-    >
-    > http://tulakinsaudiarabia.blogspot.com/2010/02/poprve-v-saudske-pousti.html
-    >
-    > Ahoj,
-    > Martin
-    >
-    > --
-    > Martin Senger
-    > email: martin.senger@gmail.com,martin.senger@kaust.edu.sa
-    > skype: martinsenger
-    >
-    >
-    >
-
-
-
-
 
 =head2 MRS::Client::Databank
 
@@ -440,7 +402,7 @@ hash:
 
 =over
 
-=item "and"
+=item C<and>
 
 The value is an array reference where elements are terms that will be
 combined by the AND boolean operator in a ranked query. For example:
@@ -452,7 +414,7 @@ you do not need to use any other arguments:
 
    $find = $db->find (['human', 'snake']);
 
-=item "or"
+=item C<or>
 
 The value is an array reference where elements are terms that will be
 combined by the OR boolean operator in a ranked query. For example:
@@ -463,7 +425,7 @@ There can be either an I<and> or an I<or> argument, but not both. If
 there are used both, a warning is issued and the I<and> one will take
 precedence.
 
-=item "query"
+=item C<query>
 
 The value is an expression, usually using some boolean operators (in
 upper cases!):
@@ -488,7 +450,7 @@ assuming again that you do not need to use any other arguments:
 
    $find = $db->find ('hemoglobinase AND NOT human');
 
-=item "algorithm"
+=item C<algorithm>
 
 The ranked queries (the ones achieved by I<and> or I<or> arguments)
 have assigned relevance score to their hits. The relevance score
@@ -508,7 +470,7 @@ The default algorithm is "Vector". For example (using the format
    $client->$db('enzyme')->find (and => 'venom',
                                  algorithm => MRS::Algorithm->Dice,
                                  max_entries => 3,
-                                 format => MRS::EntryFormat->HEADER);
+                                 'format' => MRS::EntryFormat->HEADER);
    enzyme  3.4.24.43    14.9607477      Atroxase.
    enzyme  3.4.24.49    13.6817474      Bothropasin.
    enzyme  3.4.24.73    13.2007284      Jararhagin.
@@ -516,13 +478,13 @@ The default algorithm is "Vector". For example (using the format
    $client->$db('enzyme')->find (and => 'venom',
                                  algorithm => MRS::Algorithm->Vector,
                                  max_entries => 3,
-                                 format => MRS::EntryFormat->HEADER);
+                                 'format' => MRS::EntryFormat->HEADER);
    enzyme  3.1.15.1     21.6520195      Venom exonuclease.
    enzyme  3.4.21.60    19.3931656      Scutelarin.
    enzyme  5.1.1.16     16.7410889      Protein-serine epimerase.
 
 
-=item "start", "offset", "max_entries"
+=item C<start>, C<offset>, C<max_entries>
 
 These arguments do not affect the query itself but it tells which
 entries from the found ones to retrieve (by the I<next> method - see
@@ -539,7 +501,7 @@ zero.
 
 C<max_entries> is the maximum entries to retrieve.
 
-=item "format"
+=item C<format>
 
 This argument also does not affect the query itself but it defines the
 format of the returned entries. The available values for this arguments
@@ -560,6 +522,127 @@ available only for databanks that have sequence data. For all formats,
 except for the 'header', the entries are returned as strings. For
 'header', the entries are instances of C<MRS::Client::Hit>.
 
+Be aware that C<format> is also a built-in Perl function, so better
+quote it when used as a hash key (it seems to work also without quotes
+except the emacs TAB key is confused if there are no surrounding
+quotes; just a minor annoyance).
+
+=item C<xformat>
+
+This argument (C<eXtended format>) enhances the C<format> argument. It
+is used (at least at the moment) only for HTML format; for other
+formats, it is ignored.
+
+Be aware, however, that the C<xformat> depends on the structure of the
+HTML provided by the MRS. This structure is not defined in the MRS
+server API, so it can change easily. It even depends on the way how
+the authors write their parsing scripts. When the HTML
+output changes this module must be changed, as well. Caveat emptor.
+
+The C<xformat> is a hashref with keys that change (slightly or
+significantly) the returned HTML. Here are all possible keys
+(with a randomly picked up values):
+
+   xformat => { MRS::XFormat::CSS_CLASS()   => 'mrslink',
+                MRS::XFormat::URL_PREFIX()  => 'http://cbrcgit:8080/mrs-web/'
+                MRS::XFormat::REMOVE_DEAD() => 1, # or => ['...']
+		MRS::XFormat::ONLY_LINKS()  => 1 }
+
+C<MRS::XFormat::CSS_CLASS> specifies a CSS-class name that will be
+added to all C<a> tags in the returned HTML. It allows, for example,
+an easy post-processing by various JavaScript libraries. For example,
+if the original HTML contains:
+
+   <a href="entry.do?db=go&amp;id=0005576"></a>
+
+it will become (using the value shown above):
+
+   <a class="mrslinks" href="entry.do?db=go&amp;id=0005576"></a>
+
+C<MRS::XFormat::URL_PREFIX> helps to keep the returned HTML
+independent on the machine where it was created. This option pre-pends
+the given prefix to the relative URLs in the hyperlinks that point to
+the data in an MRS web application. For example, if the original HTML
+contains:
+
+   <a href="entry.do?db=go&amp;id=0005576"></a>
+
+it will become:
+
+   <a href="http://cbrcgit:8080/mrs-web/entry.do?db=go&amp;id=0005576"></a>
+
+Other hyperlinks - those not starting with C<query> or C<entry> - are
+not affected.
+
+C<XFormat::REMOVE_DEAD> deals with the fact that the MRS server
+creates hyperlinks pointing to other MRS databanks without checking
+that they actually exists in the local MRS installation. This may be
+fixed later (quoting Maarten) but before it happens this option (if with a true
+value) removes (from the returned HTML) all hyperlinks that point to
+the not-installed MRS databanks. For example, if the original HTML has
+these hyperlinks:
+
+    <a href="query.do?db=embl&amp;query=ac:AF536179">AF536179</a>
+    <a href="query.do?db=embl&amp;query=ac:D00735">D00735</a>
+    <a href="entry.do?db=pdb&amp;id=1VZN">1VZN</a>
+    <a href="entry.do?db=pdb&amp;id=2FK4">2FK4</a>
+
+and the C<pdb> database is not locally installed, the returned HTML
+will change to:
+
+    <a href="query.do?db=embl&amp;query=ac:AF536179">AF536179</a>
+    <a href="query.do?db=embl&amp;query=ac:D00735">D00735</a>
+    1VZN
+    2FK4
+
+There is a small caveat, however. The MRS::Client needs to know what
+databanks are installed. It finds out by asking the MRS server by
+using the method C<db()> (explained elsewhere in this document). This
+method returns much more than is needed, so it can be slightly
+expensive. Therefore, if your concern is the highest speed, you can
+help the MRS::Client by providing a list of databanks that you know
+you have installed. Actually, in most cases, you can create such list
+also by calling the C<db()> method but depending on your code you can
+call it just ones an reuse it. For example, if you wish to keep
+hyperlinks only for 'uniprot' and 'embl', you specify;
+
+     xformat  => { MRS::XFormat::REMOVE_DEAD() => ['uniprot', 'embl'] }
+
+Finally, there is an option C<MRS::XFormat::ONLY_LINKS>. It has a very
+specific function: to extract and return C<only> the hyperlinks, not
+the whole HTML. It is, therefore, predestined for further
+post-processing. Note that all changes in the hyperlinks described
+earlier are also applied here (e.g. adding an absolute URL or a CSS
+class).
+
+When this option is used, the whole method "$find->next" (or
+"db->entry") returns a reference to an array of extracted
+hyperlinks:
+
+    my $find = $client->db('sprot')->find
+        (and      => ['DNP_DENAN'],
+         'format' => MRS::EntryFormat->HTML,
+         xformat  => {
+  	     MRS::XFormat::ONLY_LINKS()  => 1,
+	     MRS::XFormat::CSS_CLASS()   => 'mrslink',
+         },
+    );
+    while (my $record = $find->next) {
+    print join ("\n", @$record) . "\n";
+
+Which prints something like:
+
+    <a class="mrslink" href="entry.do?db=taxonomy&amp;id=8618">8618</a>
+    <a class="mrslink" href="query.do?db=taxonomy&amp;query=Eukaryota">Eukaryota</a>
+    ...
+    <a class="mrslink" href="query.do?db=uniprot&amp;query=kw:Disulfide kw:bond ">Disulfide bond</a>
+    ...
+    <a class="mrslink" href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=...">92332489</a>
+    ...
+    <a class="mrslink" href="entry.do?db=go&amp;id=0009405"></a>
+
+
+
 =back
 
 =head3 count
@@ -575,8 +658,8 @@ hits of that particular query.
 
 =head3 entry
 
-It takes an entry ID (mandatory), and optionally its format, and
-it returns the given entry:
+It takes an entry ID (mandatory), and optionally its format and
+extended format, and it returns the given entry:
 
    print $client->db ('enzyme')->entry ('3.4.21.60');
    ID   3.4.21.60
@@ -599,6 +682,8 @@ it returns the given entry:
                                          MRS::EntryFormat->TITLE);
     Scutelarin.
 
+The optional C<extended format> is a hashref and it was explained
+earlier in the section about the C<find()> method.
 
 =head3 id, name, version, blastable, url, script, files, indices
 
