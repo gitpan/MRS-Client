@@ -15,9 +15,9 @@ SKIP: {
     my $db = $client->db ('enzyme');
     eval { $db->name };
     if ($@) {
-	chomp $@;
-	diag ("Skipping tests requiring access to the MRS server ($@)");
-	skip "No access to MRS server", 29;
+        chomp $@;
+        diag ("Skipping tests requiring access to the MRS server ($@)");
+        skip "No access to MRS server", 29;
     }
     ok ($db->name,                              'Databank name');
     ok ($db->version,                           'Databank version');

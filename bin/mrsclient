@@ -1,13 +1,20 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 #
 #   Usage: ./mrsclient -h
 #
 #   martin.senger@gmail.com
 #   February 2010
+#
+# ABSTRACT: program accessing MRS Retrieval System
+# PODNAME: MRS::Client
 #-----------------------------------------------------------------------------
-
-use strict;
 use warnings;
+use strict;
+package main;
+{
+  $main::VERSION = '0.600100';
+}  # this is here to make Dist:Dzilla's PkgVersion happy
+
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use lib "$FindBin::Bin/../lib/perl5";
@@ -93,12 +100,15 @@ if ($opt_h or @all_args == 0) {
 
 # print version and exit
 if ($opt_v) {
+    ## no critic
+    no strict;    # because the $VERSION will be added only when
+    no warnings;  # the distribution is fully built up
     print "$0 using MRS::Client version $MRS::Client::VERSION\n";
-    exit 0;
+    exit(0);
 }
 
 # databanks may use UTF8 (e.g. OMIM definitely does)
-binmode STDOUT, ":utf8";
+binmode STDOUT, ":encoding(UTF-8)";
 
 # create the main worker
 my @args = ();
@@ -145,9 +155,9 @@ if (defined $opt_C) {
 # info about a single database
 if ( $opt_d and @ARGV == 0 and not ($opt_a or $opt_o or $opt_q or $opt_i) ) {
     if ($opt_c) {
-	say $client->db ($opt_d)->count;
+        say $client->db ($opt_d)->count;
     } else {
-	say $client->db ($opt_d);
+        say $client->db ($opt_d);
     }
 }
 
@@ -157,11 +167,11 @@ my @or = ();
 if (@ARGV > 0) {
     # use remaining command-line arguments
     foreach my $text (@ARGV) {
-	if (MRS::Operator->contains ($text)) {
-	    $opt_q = $text;
-	} else {
-	    push (@and, $text);
-	}
+        if (MRS::Operator->contains ($text)) {
+            $opt_q = $text;
+        } else {
+            push (@and, $text);
+        }
     }
 } else {
     # use values from options -a, -o, and -q
@@ -180,28 +190,28 @@ if (@find_args > 0 and not $opt_i) {
     # make query
     my $find;
     if ($opt_d) {
-	$find = $client->db ($opt_d)->find (@find_args);
+        $find = $client->db ($opt_d)->find (@find_args);
     } else {
-	$find = $client->find (@find_args);
+        $find = $client->find (@find_args);
     }
     # show results
     unless ($opt_n) {
-	while (my $record = $find->next) {
-	    say $record;
-	}
+        while (my $record = $find->next) {
+            say $record;
+        }
     }
     if ($opt_c) {
-	if ($opt_d) {
-	    say $find->count;
-	} else {
-	    my %counts = $find->db_counts;
-	    foreach my $db (sort keys %counts) {
-		printf ("%-15s %9d\n", $db, $counts{$db});
-	    }
-	}
+        if ($opt_d) {
+            say $find->count;
+        } else {
+            my %counts = $find->db_counts;
+            foreach my $db (sort keys %counts) {
+                printf ("%-15s %9d\n", $db, $counts{$db});
+            }
+        }
     }
     if ($opt_p) {
-     	say "Query properties:\n" . $find;
+        say "Query properties:\n" . $find;
     }
 }
 
@@ -221,6 +231,32 @@ if ($opt_i and $opt_d) {
 if ($opt_x) {
     print $client->parser ($client->db ($opt_x)->parser);
 }
+
+
+
+
+=pod
+
+=head1 NAME
+
+MRS::Client - program accessing MRS Retrieval System
+
+=head1 VERSION
+
+version 0.600100
+
+=head1 AUTHOR
+
+Martin Senger <martin.senger@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
 
 
 __END__

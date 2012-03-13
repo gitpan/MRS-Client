@@ -1,13 +1,20 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 #
 #   Usage: ./mrsclustal -h
 #
 #   martin.senger@gmail.com
 #   February 2010
+#
+# ABSTRACT: program running BLAST using the MRS Retrieval System
+# PODNAME: MRS::Client
 #-----------------------------------------------------------------------------
-
-use strict;
 use warnings;
+use strict;
+package main;
+{
+  $main::VERSION = '0.600100';
+}  # this is here to make Dist:Dzilla's PkgVersion happy
+
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use lib "$FindBin::Bin/../lib/perl5";
@@ -60,12 +67,15 @@ if ($opt_h or @all_args == 0) {
 
 # print version and exit
 if ($opt_v) {
+    ## no critic
+    no strict;    # because the $VERSION will be added only when
+    no warnings;  # the distribution is fully built up
     print "$0 using MRS::Client version $MRS::Client::VERSION\n";
     exit 0;
 }
 
 # use UTF8 for output
-binmode STDOUT, ":utf8";
+binmode STDOUT, ":encoding(UTF-8)";
 
 # create the main worker
 my @args = ();
@@ -95,5 +105,31 @@ if ($opt_d) {
 } else {
     print $result;
 }
+
+
+
+=pod
+
+=head1 NAME
+
+MRS::Client - program running BLAST using the MRS Retrieval System
+
+=head1 VERSION
+
+version 0.600100
+
+=head1 AUTHOR
+
+Martin Senger <martin.senger@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+
 
 __END__

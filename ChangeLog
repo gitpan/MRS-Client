@@ -1,3 +1,18 @@
+2012-03-13  Martin Senger  <martin.senger&#64;gmail.com>
+
+	* Released version 0.600100
+
+	* Added dependency on the minimal version (2.26) of the
+	  XML::Compile::SOAP11 module.
+
+	* Fixed links in the documentation; Client.pod is now part of the
+	  Client.pm (in the distributed package)
+
+	* Fixed warnings issued by Perl::critic
+	  (such as "return undef;" => "return;").
+
+	* Distribution/packaging moved under Dist::Zilla.
+
 2010-06-28  Martin Senger  <martin.senger&#64;gmail.com>
 
 	* Released version 0.60

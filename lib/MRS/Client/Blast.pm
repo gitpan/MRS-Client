@@ -3,9 +3,15 @@
 # Authors: Martin Senger <martin.senger@gmail.com>
 # For copyright and disclaimer see MRS::Client pod.
 #
-# Blast invocation and results
+# ABSTRACT: Blast invocation and results
+# PODNAME: MRS::Client
 #-----------------------------------------------------------------
+use warnings;
+use strict;
 package MRS::Client::Blast;
+{
+  $MRS::Client::Blast::VERSION = '0.600100';
+}
 
 use Carp;
 use MRS::Constants;
@@ -59,7 +65,7 @@ sub job {
     my ($self, $jobid, %args) = @_;
     return $jobs{$jobid} if $jobs{$jobid};
     my $job = MRS::Client::Blast::Job->_new (client => $self->{client},
-					     id     => $jobid);
+                                             id     => $jobid);
     $job->_set_parameters (%args) if %args;  # good for XML output
     $jobs{ $job->{id} } = $job;
     return $job;
@@ -85,6 +91,9 @@ sub remove_job {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Blast::Job;
+{
+  $MRS::Client::Blast::Job::VERSION = '0.600100';
+}
 
 use Carp;
 
@@ -124,7 +133,10 @@ sub program     { return shift->{program}; }     # only blastp (so-far)
 use overload q("") => "as_string";
 sub as_string {
     my $self = shift;
-    my ($input) = $self->{fasta} =~ m/(^.+\n)/ if $self->{fasta};
+    my $input;
+    if ($self->{fasta}) {
+        ($input) = $self->{fasta} =~ m/(^.+\n)/;
+    }
     my $r = '';
     $r .= "Job ID:             " . $self->id          . "\n" if $self->id;
     $r .= "Databank:           " . $self->db          . "\n" if $self->db;
@@ -166,20 +178,23 @@ sub _set_parameters {
 
     # some arguments checking and dealing with
     croak ("Blast cannot be run without a 'db' parameter.\n")
-	unless $self->{db};
+        unless $self->{db};
     warn "Both arguments 'fasta' and 'fasta_file' are given. The 'fasta_file' will be ignored.\n"
-	and delete $self->{fasta_file}
+        and delete $self->{fasta_file}
         if $self->fasta and $self->fasta_file;
 
     # slurp the input fasta file
     if ($self->{fasta_file}) {
-	open (FASTA, $self->{fasta_file})
-	    or croak ("Cannot open file '" . $self->{fasta_file} . "':" . $! . "\n");
-	local $/ = undef;
-	$self->{fasta} = <FASTA>;
-	close FASTA;
+        open (my $fasta, '<', $self->{fasta_file})
+            or croak ("Cannot open file '" . $self->{fasta_file} . "':" . $! . "\n");
+        local $/ = undef;
+        $self->{fasta} = <$fasta>;
+        close $fasta;
     }
-    my ($seq_id, $seq_desc) = $self->{fasta} =~ m/^>(\S+)\s*(.+)?\n/ if $self->{fasta};
+    my ($seq_id, $seq_desc);
+    if ($self->{fasta}) {
+        ($seq_id, $seq_desc) = $self->{fasta} =~ m/^>(\S+)\s*(.+)?\n/;
+    }
     my ($seq) = $self->{fasta} =~ m/^>[^\n]*\n(.*)/s;
     $self->{seq_id} = $seq_id if $seq_id;
     $self->{seq_desc} = $seq_desc if $seq_desc;
@@ -187,7 +202,7 @@ sub _set_parameters {
 
     # more checking...
     croak ("Blast cannot be run without a 'fasta' or 'fasta_file' parameter.\n")
-	unless $self->{fasta};
+        unless $self->{fasta};
 
     return $self;
 }
@@ -202,25 +217,25 @@ sub _run {
 
     # start Blast
     my $params = {
-	matrix              => $self->matrix,
-	wordSize            => $self->word_size,
-	expect              => $self->expect,
-	lowComplexityFilter => ($self->filter ? 1 : 0),
-	gapped              => ($self->gapped ? 1 : 0),
-	gapOpen             => $self->open_cost,
-	gapExtend           => $self->extend_cost,
+        matrix              => $self->matrix,
+        wordSize            => $self->word_size,
+        expect              => $self->expect,
+        lowComplexityFilter => ($self->filter ? 1 : 0),
+        gapped              => ($self->gapped ? 1 : 0),
+        gapOpen             => $self->open_cost,
+        gapExtend           => $self->extend_cost,
     };
 
     $self->{client}->_create_proxy ('blast');
     my $answer = $self->{client}->_call (
-	$self->{client}->{blast_proxy}, 'Blast',
-	{ query           => $self->fasta,
-	  program         => $self->program,
-	  db              => $self->db,
-	  mrsBooleanQuery => ($self->query ? $self->query : ''),
-	  reportLimit     => ($self->max_hits),
-	  params          => $params,
-	});
+        $self->{client}->{blast_proxy}, 'Blast',
+        { query           => $self->fasta,
+          program         => $self->program,
+          db              => $self->db,
+          mrsBooleanQuery => ($self->query ? $self->query : ''),
+          reportLimit     => ($self->max_hits),
+          params          => $params,
+        });
 
     $self->{id} =  $answer->{parameters}->{jobId};
     $self->{status} = MRS::JobStatus->UNKNOWN;
@@ -237,8 +252,8 @@ sub status {
 
     $self->{client}->_create_proxy ('blast');
     my $answer = $self->{client}->_call (
-	$self->{client}->{blast_proxy}, 'BlastJobStatus',
-	{ jobId => $self->{id} });
+        $self->{client}->{blast_proxy}, 'BlastJobStatus',
+        { jobId => $self->{id} });
 
     $self->{status} = $answer->{parameters}->{status};
     return  $self->{status};
@@ -250,8 +265,8 @@ sub _done {
     my $self = shift;
     return 0 unless $self->{status};
     return
-	$self->{status} eq MRS::JobStatus->FINISHED or
-	$self->{status} eq MRS::JobStatus->ERROR;
+        $self->{status} eq MRS::JobStatus->FINISHED or
+        $self->{status} eq MRS::JobStatus->ERROR;
 }
 
 #-----------------------------------------------------------------
@@ -278,12 +293,12 @@ sub failed {
 # -----------------------------------------------------------------
 sub error {
     my $self = shift;
-    return undef unless $self->failed;
+    return unless $self->failed;
 
     $self->{client}->_create_proxy ('blast');
     my $answer = $self->{client}->_call (
-	$self->{client}->{blast_proxy}, 'BlastJobError',
-	{ jobId => $self->{id} });
+        $self->{client}->{blast_proxy}, 'BlastJobError',
+        { jobId => $self->{id} });
     # # TBD
     # use Data::Dumper;
     # print Dumper ($answer);
@@ -297,15 +312,15 @@ sub error {
 # -----------------------------------------------------------------
 sub results {
     my ($self, $format) = @_;
-    return undef unless $self->completed;
-    return undef if $self->failed;
+    return unless $self->completed;
+    return if $self->failed;
     $format = MRS::BlastOutputFormat->HITS
-	unless MRS::BlastOutputFormat->check ($format);
+        unless MRS::BlastOutputFormat->check ($format);
 
     $self->{client}->_create_proxy ('blast');
     my $answer = $self->{client}->_call (
-	$self->{client}->{blast_proxy}, 'BlastJobResult',
-	{ jobId => $self->{id} });
+        $self->{client}->{blast_proxy}, 'BlastJobResult',
+        { jobId => $self->{id} });
 
     $answer->{parameters}->{format} = $format;
     return MRS::Client::Blast::Result->_new ($answer->{parameters}, $self);
@@ -317,6 +332,9 @@ sub results {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Blast::Result;
+{
+  $MRS::Client::Blast::Result::VERSION = '0.600100';
+}
 
 use File::Basename;
 
@@ -338,10 +356,10 @@ sub _new {
 
     $self->{hits} = [];  # MRS::Client::Blast::Hit
     if ($data->{hits}) {
-	foreach my $hit (@{ $data->{hits} }) {
-	    push (@{ $self->{hits} },
-		  MRS::Client::Blast::Hit->_new ($hit, $self->{format}));
-	}
+        foreach my $hit (@{ $data->{hits} }) {
+            push (@{ $self->{hits} },
+                  MRS::Client::Blast::Hit->_new ($hit, $self->{format}));
+        }
     }
 
     # done
@@ -360,19 +378,19 @@ use overload q("") => "as_string";
 sub as_string {
     my $self = shift;
     return $self->convert2xml
-	if $self->{format} eq MRS::BlastOutputFormat->XML;
+        if $self->{format} eq MRS::BlastOutputFormat->XML;
     my $r = '';
     if ($self->{format} eq MRS::BlastOutputFormat->STATS or
-	$self->{format} eq MRS::BlastOutputFormat->FULL) {
-	$r .= "DB count:     " . $self->db_count  . "\n" if defined $self->db_count;
-	$r .= "DB length:    " . $self->db_length . "\n" if defined $self->db_length;
-	$r .= "Search space: " . $self->db_space  . "\n" if defined $self->db_space;
-	$r .= "Kappa:        " . $self->kappa     . "\n" if defined $self->kappa;
-	$r .= "Lambda:       " . $self->lambda    . "\n" if defined $self->lambda;
-	$r .= "Entropy:      " . $self->entropy   . "\n" if defined $self->entropy;
+        $self->{format} eq MRS::BlastOutputFormat->FULL) {
+        $r .= "DB count:     " . $self->db_count  . "\n" if defined $self->db_count;
+        $r .= "DB length:    " . $self->db_length . "\n" if defined $self->db_length;
+        $r .= "Search space: " . $self->db_space  . "\n" if defined $self->db_space;
+        $r .= "Kappa:        " . $self->kappa     . "\n" if defined $self->kappa;
+        $r .= "Lambda:       " . $self->lambda    . "\n" if defined $self->lambda;
+        $r .= "Entropy:      " . $self->entropy   . "\n" if defined $self->entropy;
     }
     unless ($self->{format} eq MRS::BlastOutputFormat->STATS) {
-	$r .= $_ foreach @{ $self->{hits} };
+        $r .= $_ foreach @{ $self->{hits} };
     }
     return $r;
 }
@@ -381,16 +399,16 @@ sub convert2xml {
     my $self = shift;
     my $template_file = 'blast.result.xml.template';
     my $r =
-	MRS::Client::_readfile ( (fileparse (__FILE__))[-2] . $template_file );
+        MRS::Client::_readfile ( (fileparse (__FILE__))[-2] . $template_file );
 
     # output general header and used parameters
     $r =~ s/\${JOBID}/$self->{job}->{id}/eg;
     if ($self->{job}->{seq_desc}) {
-	$r =~ s/\${SEQDESC}/$self->{job}->{seq_desc}/eg;
+        $r =~ s/\${SEQDESC}/$self->{job}->{seq_desc}/eg;
     } elsif ($self->{job}->{seq_id}) {
-	$r =~ s/\${SEQDESC}/$self->{job}->{seq_id}/eg;
+        $r =~ s/\${SEQDESC}/$self->{job}->{seq_id}/eg;
     } else {
-	$r =~ s/\${SEQDESC}//g;
+        $r =~ s/\${SEQDESC}//g;
     }
     $r =~ s/\${DB}/($self->{job}->{db} ? $self->{job}->{db} : '')/e;
     $r =~ s/\${SEQLEN}/($self->{job}->{seq_len} ? $self->{job}->{seq_len} : '')/e;
@@ -412,70 +430,70 @@ sub convert2xml {
     my ($hit_template) = $r =~ m|\$\$HITSTART(.*)\$\$HITEND|s;
     my $hit_count = 1;
     foreach my $hit (@{ $self->{hits} }) {
-    	next unless $hit->id;   # probably paranoia
-    	my $rh = $hit_template; # clone the template
-    	$rh =~ s/\${HITNR}/$hit_count/;
-    	$rh =~ s/\${HITID}/$hit->id/eg;
-	if ($hit->sequences and @{ $hit->sequences }>0) {
-	    $rh =~ s/\${HITSEQID}/"<Hit_sequenceId>".@{ $hit->sequences }[0]."<\/Hit_sequenceId>"/e;
-	} else {
-	    $rh =~ s/\${HITSEQID}//;
-	}
-	if ($hit->hsps and @{ $hit->hsps } > 0) {
-	    $rh =~ s/\${HITSUBLEN}/@{ $hit->hsps }[0]->subject_length/e;
+        next unless $hit->id;   # probably paranoia
+        my $rh = $hit_template; # clone the template
+        $rh =~ s/\${HITNR}/$hit_count/;
+        $rh =~ s/\${HITID}/$hit->id/eg;
+        if ($hit->sequences and @{ $hit->sequences }>0) {
+            $rh =~ s/\${HITSEQID}/"<Hit_sequenceId>".@{ $hit->sequences }[0]."<\/Hit_sequenceId>"/e;
+        } else {
+            $rh =~ s/\${HITSEQID}//;
+        }
+        if ($hit->hsps and @{ $hit->hsps } > 0) {
+            $rh =~ s/\${HITSUBLEN}/@{ $hit->hsps }[0]->subject_length/e;
 
-	    # output HSPs
-	    my $hsps = '';
-	    my ($hsp_template) = $rh =~ m|\$\$HSPSTART(.*)\$\$HSPEND|s;
-	    my $hsp_count = 1;
-	    foreach my $hsp (@{ $hit->{hsps} }) {
-		my $rhs = $hsp_template; # clone the template
+            # output HSPs
+            my $hsps = '';
+            my ($hsp_template) = $rh =~ m|\$\$HSPSTART(.*)\$\$HSPEND|s;
+            my $hsp_count = 1;
+            foreach my $hsp (@{ $hit->{hsps} }) {
+                my $rhs = $hsp_template; # clone the template
 
-		$rhs =~ s/\${HSPNR}/$hsp_count/;
-		$rhs =~ s/\${HSPBITSCORE}/($hsp->bit_score ? $hsp->bit_score : '0')/e;
-		$rhs =~ s/\${HSPSCORE}/($hsp->score ? $hsp->score : '0')/e;
-		$rhs =~ s/\${HSPEXPECT}/($hsp->expect ? sprintf ("%e", $hsp->expect) : '0')/e;
-		$rhs =~ s/\${HSPIDENTITY}/($hsp->identity ? $hsp->identity : '0')/e;
-		$rhs =~ s/\${HSPPOSITIVE}/($hsp->positive ? $hsp->positive : '0')/e;
-		$rhs =~ s/\${HSPMIDLINE}/($hsp->midline ? $hsp->midline : '')/e;
+                $rhs =~ s/\${HSPNR}/$hsp_count/;
+                $rhs =~ s/\${HSPBITSCORE}/($hsp->bit_score ? $hsp->bit_score : '0')/e;
+                $rhs =~ s/\${HSPSCORE}/($hsp->score ? $hsp->score : '0')/e;
+                $rhs =~ s/\${HSPEXPECT}/($hsp->expect ? sprintf ("%e", $hsp->expect) : '0')/e;
+                $rhs =~ s/\${HSPIDENTITY}/($hsp->identity ? $hsp->identity : '0')/e;
+                $rhs =~ s/\${HSPPOSITIVE}/($hsp->positive ? $hsp->positive : '0')/e;
+                $rhs =~ s/\${HSPMIDLINE}/($hsp->midline ? $hsp->midline : '')/e;
 
-		my $query_from = ($hsp->query_start ? $hsp->query_start+1 : '1');
-		my $query_to = $query_from;
-		my $subject_from = ($hsp->subject_start ? $hsp->subject_start+1 : '1');
-		my $subject_to = $subject_from;
-		my $query_align = ($hsp->query_align ? $hsp->query_align : '');
-		my $subject_align = ($hsp->subject_align ? $hsp->subject_align : '');
+                my $query_from = ($hsp->query_start ? $hsp->query_start+1 : '1');
+                my $query_to = $query_from;
+                my $subject_from = ($hsp->subject_start ? $hsp->subject_start+1 : '1');
+                my $subject_to = $subject_from;
+                my $query_align = ($hsp->query_align ? $hsp->query_align : '');
+                my $subject_align = ($hsp->subject_align ? $hsp->subject_align : '');
 
-		my $query_align_len = length ($query_align);
-		for (my $offset = 0; $offset < $query_align_len; ++$offset) {
-		    my $strlen = $query_align_len - $offset;
-		    $strlen = 60 if $strlen > 60;  # kMaxStringLength
-		    my $q = substr ($query_align, $offset, $strlen);
-		    my $s = substr ($subject_align, $offset, $strlen);
-		    my $q_dash_count = ($q =~ tr/-//);
-		    $query_to += (length ($q) - $q_dash_count);
-		    my $s_dash_count = ($s =~ tr/-//);
-		    $subject_to += (length ($s) - $s_dash_count);
+                my $query_align_len = length ($query_align);
+                for (my $offset = 0; $offset < $query_align_len; ++$offset) {
+                    my $strlen = $query_align_len - $offset;
+                    $strlen = 60 if $strlen > 60;  # kMaxStringLength
+                    my $q = substr ($query_align, $offset, $strlen);
+                    my $s = substr ($subject_align, $offset, $strlen);
+                    my $q_dash_count = ($q =~ tr/-//);
+                    $query_to += (length ($q) - $q_dash_count);
+                    my $s_dash_count = ($s =~ tr/-//);
+                    $subject_to += (length ($s) - $s_dash_count);
 
-		    $offset += $strlen - 1;
-		}
-		$rhs =~ s/\${HSPQFROM}/$query_from/;
-		$rhs =~ s/\${HSPQTO}/$query_to/;
-		$rhs =~ s/\${HSPHFROM}/$subject_from/;
-		$rhs =~ s/\${HSPHTO}/$subject_to/;
-		$rhs =~ s/\${HSPALIGNLEN}/$query_align_len/;
-		$rhs =~ s/\${HSPQALIGN}/$query_align/;
-		$rhs =~ s/\${HSPSUBALIGN}/$subject_align/;
+                    $offset += $strlen - 1;
+                }
+                $rhs =~ s/\${HSPQFROM}/$query_from/;
+                $rhs =~ s/\${HSPQTO}/$query_to/;
+                $rhs =~ s/\${HSPHFROM}/$subject_from/;
+                $rhs =~ s/\${HSPHTO}/$subject_to/;
+                $rhs =~ s/\${HSPALIGNLEN}/$query_align_len/;
+                $rhs =~ s/\${HSPQALIGN}/$query_align/;
+                $rhs =~ s/\${HSPSUBALIGN}/$subject_align/;
 
-		$hsps .= $rhs;
-		$hsp_count++;
-	    }
-	    $rh =~ s/\$\$HSPSTART(.*)\$\$HSPEND/$hsps/s;
-	} else {
-	    $rh =~ s/\$\$HSPSTART(.*)\$\$HSPEND//s;
-	}
-    	$hits .= $rh;
-    	$hit_count++;
+                $hsps .= $rhs;
+                $hsp_count++;
+            }
+            $rh =~ s/\$\$HSPSTART(.*)\$\$HSPEND/$hsps/s;
+        } else {
+            $rh =~ s/\$\$HSPSTART(.*)\$\$HSPEND//s;
+        }
+        $hits .= $rh;
+        $hit_count++;
     }
     $r =~ s/\$\$HITSTART(.*)\$\$HITEND/$hits/s;
     return $r;
@@ -487,6 +505,9 @@ sub convert2xml {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Blast::Hit;
+{
+  $MRS::Client::Blast::Hit::VERSION = '0.600100';
+}
 
 sub _new {
     # $data is a hashref (from $answer->{parameters}->{hits})
@@ -502,9 +523,9 @@ sub _new {
 
     $self->{hsps} = [];  # refarray of MRS::Client::Blast::HSP
     if ($data->{hsps}) {
-	foreach my $hsp (@{ $data->{hsps} }) {
-	    push (@{ $self->{hsps} }, MRS::Client::Blast::HSP->_new ($hsp));
-	}
+        foreach my $hsp (@{ $data->{hsps} }) {
+            push (@{ $self->{hsps} }, MRS::Client::Blast::HSP->_new ($hsp));
+        }
     }
 
     # done
@@ -522,27 +543,27 @@ sub as_string {
     my $seqs = join (",", @{ $self->sequences });
     $seqs = " ($seqs)" if $seqs;
     if ($self->{format} eq MRS::BlastOutputFormat->FULL) {
-	return sprintf ("[%-20s] %s %s\n%s\n",
-			($self->id or ''),
-			($self->title or ''),
-			$seqs,
-			join ("\n", @{ $self->hsps }));
+        return sprintf ("[%-20s] %s %s\n%s\n",
+                        ($self->id or ''),
+                        ($self->title or ''),
+                        $seqs,
+                        join ("\n", @{ $self->hsps }));
     } else {
-	my $bit_score = 0;
-	my $expect = 0;
-	my $hsps_size = 0;
-	if ($self->hsps and @{ $self->hsps } > 0) {
-	    $hsps_size = scalar @{ $self->hsps };
-	    $bit_score = $self->hsps->[0]->bit_score;
-	    $expect = $self->hsps->[0]->expect;
-	}
-	return sprintf ("%7.1f %15e  [%-20s]%3d %s %s\n",
-			$bit_score,
-			$expect,
-			($self->id or ''),
-			$hsps_size,
-			($self->title or ''),
-			$seqs);
+        my $bit_score = 0;
+        my $expect = 0;
+        my $hsps_size = 0;
+        if ($self->hsps and @{ $self->hsps } > 0) {
+            $hsps_size = scalar @{ $self->hsps };
+            $bit_score = $self->hsps->[0]->bit_score;
+            $expect = $self->hsps->[0]->expect;
+        }
+        return sprintf ("%7.1f %15e  [%-20s]%3d %s %s\n",
+                        $bit_score,
+                        $expect,
+                        ($self->id or ''),
+                        $hsps_size,
+                        ($self->title or ''),
+                        $seqs);
     }
 }
 
@@ -552,6 +573,9 @@ sub as_string {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Blast::HSP;
+{
+  $MRS::Client::Blast::HSP::VERSION = '0.600100';
+}
 
 sub _new {
     my ($class, $data) = @_;  # $data is a hashref (from $answer->{parameters}->{hits})
@@ -610,7 +634,17 @@ sub as_string {
 }
 
 1;
-__END__
+
+
+=pod
+
+=head1 NAME
+
+MRS::Client - Blast invocation and results
+
+=head1 VERSION
+
+version 0.600100
 
 =head1 NAME
 
@@ -622,4 +656,19 @@ For the full documentation of the project see please:
 
    perldoc MRS::Client
 
+=head1 AUTHOR
+
+Martin Senger <martin.senger@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
+
+__END__
+

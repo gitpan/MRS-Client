@@ -2,32 +2,17 @@
 # MRS::Constants
 # Authors: Martin Senger <martin.senger@gmail.com>
 # For copyright and disclaimer see MRS::Client pod.
+#
+# ABSTRACT: Used constants in the MRS::Client's modules
+# PODNAME: MRS::Client
 #-----------------------------------------------------------------
-
 use strict;
 use warnings;
-use vars qw( @EXPORT @ISA );
+package MRS::Constants;
+{
+  $MRS::Constants::VERSION = '0.600100';
+}
 
-@ISA = qw( Exporter );
-@EXPORT = qw( $DEFAULT_SEARCH_ENDPOINT $DEFAULT_BLAST_ENDPOINT $DEFAULT_CLUSTAL_ENDPOINT $DEFAULT_ADMIN_ENDPOINT $DEFAULT_SEARCH_WSDL $DEFAULT_BLAST_WSDL $DEFAULT_CLUSTAL_WSDL $DEFAULT_ADMIN_WSDL $DEFAULT_SEARCH_SERVICE $DEFAULT_BLAST_SERVICE $DEFAULT_CLUSTAL_SERVICE $DEFAULT_ADMIN_SERVICE );
-
-#-----------------------------------------------------------------
-#
-#  Expoted constants
-#
-#-----------------------------------------------------------------
-use constant DEFAULT_SEARCH_ENDPOINT  => 'http://mrs.cmbi.ru.nl/mrsws/search';
-use constant DEFAULT_BLAST_ENDPOINT   => 'http://mrs.cmbi.ru.nl/mrsws/blast';
-use constant DEFAULT_CLUSTAL_ENDPOINT => 'http://mrs.cmbi.ru.nl/mrsws/clustal';
-use constant DEFAULT_ADMIN_ENDPOINT   => 'http://mrs.cmbi.ru.nl/mrsws/admin';
-use constant DEFAULT_SEARCH_WSDL      => 'search.wsdl.template';
-use constant DEFAULT_BLAST_WSDL       => 'blast.wsdl.template';
-use constant DEFAULT_CLUSTAL_WSDL     => 'clustal.wsdl.template';
-use constant DEFAULT_ADMIN_WSDL       => 'admin.wsdl.template';
-use constant DEFAULT_SEARCH_SERVICE   => 'mrsws_search';
-use constant DEFAULT_BLAST_SERVICE    => 'mrsws_blast';
-use constant DEFAULT_CLUSTAL_SERVICE  => 'mrsws_clustal';
-use constant DEFAULT_ADMIN_SERVICE    => 'mrsws_admin';
 
 #-----------------------------------------------------------------
 #
@@ -35,6 +20,9 @@ use constant DEFAULT_ADMIN_SERVICE    => 'mrsws_admin';
 #
 #-----------------------------------------------------------------
 package MRS::EntryFormat;
+{
+  $MRS::EntryFormat::VERSION = '0.600100';
+}
 
 use constant {
     PLAIN    => 'plain',
@@ -52,8 +40,8 @@ sub check {
     my ($class, $format) = @_;
     return 0 unless $format;
     my $regex =
-	PLAIN . '|' . TITLE . '|' . HTML . '|' . FASTA . '|' . SEQUENCE .
-	'|' . HEADER;
+        PLAIN . '|' . TITLE . '|' . HTML . '|' . FASTA . '|' . SEQUENCE .
+        '|' . HEADER;
     my $regex_c = qr/^($regex)$/;
     $format =~ $regex_c;
 }
@@ -64,6 +52,9 @@ sub check {
 #
 #-----------------------------------------------------------------
 package MRS::XFormat;
+{
+  $MRS::XFormat::VERSION = '0.600100';
+}
 
 use constant {
     CSS_CLASS   => 'css_class',
@@ -79,7 +70,7 @@ sub check {
     my ($class, $format) = @_;
     return 0 unless $format;
     my $regex =
-	CSS_CLASS . '|' . URL_PREFIX . '|' . REMOVE_DEAD . '|' . ONLY_LINKS;
+        CSS_CLASS . '|' . URL_PREFIX . '|' . REMOVE_DEAD . '|' . ONLY_LINKS;
     my $regex_c = qr/^($regex)$/;
     $format =~ $regex_c;
 }
@@ -90,6 +81,9 @@ sub check {
 #
 #-----------------------------------------------------------------
 package MRS::Algorithm;
+{
+  $MRS::Algorithm::VERSION = '0.600100';
+}
 
 use constant {
     VECTOR   => 'Vector',
@@ -114,6 +108,9 @@ sub check {
 #
 #-----------------------------------------------------------------
 package MRS::Operator;
+{
+  $MRS::Operator::VERSION = '0.600100';
+}
 
 use constant {
     CONTAINS       => ':',
@@ -139,10 +136,10 @@ sub contains {
     my ($class, $query) = @_;
     return 0 unless $query;
     my $regex =
-	UNION . '|' . INTERSECTION .
-	'|' . LT . '|' . LE. '|' . EQ . '|' . GT . '|' . GE .
-	'|' . NOT . '|' . '|' . OR . '|' . AND .
-	'|' . ADJACENT . '|' . CONTAINSSTRING;
+        UNION . '|' . INTERSECTION .
+        '|' . LT . '|' . LE. '|' . EQ . '|' . GT . '|' . GE .
+        '|' . NOT . '|' . '|' . OR . '|' . AND .
+        '|' . ADJACENT . '|' . CONTAINSSTRING;
     my $regex_c1 = qr/\W+($regex)\W+/;
     my $regex_c2 = qr/:/;
     $query =~ $regex_c1 or $query =~ $regex_c2;
@@ -154,6 +151,9 @@ sub contains {
 #
 #-----------------------------------------------------------------
 package MRS::JobStatus;
+{
+  $MRS::JobStatus::VERSION = '0.600100';
+}
 
 use constant {
     UNKNOWN  => 'unknown',
@@ -180,6 +180,9 @@ sub check {
 #
 #-----------------------------------------------------------------
 package MRS::BlastOutputFormat;
+{
+  $MRS::BlastOutputFormat::VERSION = '0.600100';
+}
 
 use constant {
     XML   => 'xml',
@@ -200,7 +203,18 @@ sub check {
 }
 
 1;
-__END__
+
+
+=pod
+
+=head1 NAME
+
+MRS::Client - Used constants in the MRS::Client's modules
+
+=head1 VERSION
+
+version 0.600100
+
 =head1 NAME
 
 MRS::Constants - part of a SOAP-based client accessing MRS databases
@@ -211,4 +225,18 @@ For the full documentation of the project see please:
 
    perldoc MRS::Client
 
+=head1 AUTHOR
+
+Martin Senger <martin.senger@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
+
+__END__

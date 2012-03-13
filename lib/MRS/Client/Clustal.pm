@@ -3,9 +3,15 @@
 # Authors: Martin Senger <martin.senger@gmail.com>
 # For copyright and disclaimer see MRS::Client pod.
 #
-# Clustal invocation and results
+# ABSTRACT: Clustal invocation and results
+# PODNAME: MRS::Client
 #-----------------------------------------------------------------
+use warnings;
+use strict;
 package MRS::Client::Clustal;
+{
+  $MRS::Client::Clustal::VERSION = '0.600100';
+}
 
 use Carp;
 
@@ -56,39 +62,39 @@ sub run {
 
     # arguments checking...
     croak ("Clustal cannot be run without a 'fasta_file' parameter.\n")
-	unless $self->{fasta_file};
+        unless $self->{fasta_file};
 
     # read multi fasta file
     my $sequences = [];  # elements are refhash
     {
-	open (FASTA, $self->{fasta_file})
-	    or croak ("Cannot open file '" . $self->{fasta_file} . "':" . $! . "\n");
-	local $/ = '>'; # record delimiter as expected in FASTA file
+        open (my $fasta, '<', $self->{fasta_file})
+            or croak ("Cannot open file '" . $self->{fasta_file} . "':" . $! . "\n");
+        local $/ = '>'; # record delimiter as expected in $fasta file
 
-	(undef) = scalar <FASTA>; # discard the first (blank) record
-	while (my $record = <FASTA>) {
-	    # split to lines
-	    my @lines = split "\n", $record;
+        (undef) = scalar <$fasta>; # discard the first (blank) record
+        while (my $record = <$fasta>) {
+            # split to lines
+            my @lines = split "\n", $record;
 
-	    # discard the last line if necessary
-	    pop @lines if $lines[-1] eq '>';
+            # discard the last line if necessary
+            pop @lines if $lines[-1] eq '>';
 
-	    # take out what is needed
-	    my ($id) = (shift @lines) =~ /(\S+)/;
-	    if ($id) {
-		push (@{ $sequences }, {id => $id, sequence => uc join ('', @lines)});
-	    }
-	}
+            # take out what is needed
+            my ($id) = (shift @lines) =~ /(\S+)/;
+            if ($id) {
+                push (@{ $sequences }, {id => $id, sequence => uc join ('', @lines)});
+            }
+        }
     }
 
     # run Clustal
     $self->{client}->_create_proxy ('clustal');
     my $answer = $self->{client}->_call (
-	$self->{client}->{clustal_proxy}, 'ClustalW',
-	{ input     => $sequences,   # refarray
-	  gapOpen   => $self->open_cost,
-	  gapExtend => $self->extend_cost,
-	});
+        $self->{client}->{clustal_proxy}, 'ClustalW',
+        { input     => $sequences,   # refarray
+          gapOpen   => $self->open_cost,
+          gapExtend => $self->extend_cost,
+        });
     return MRS::Client::Clustal::Result->_new ($answer->{parameters});
 }
 
@@ -98,6 +104,9 @@ sub run {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Clustal::Result;
+{
+  $MRS::Client::Clustal::Result::VERSION = '0.600100';
+}
 
 sub _new {
     my ($class, $data) = @_;  # $data is a hashref (from $answer->{parameters})
@@ -110,10 +119,10 @@ sub _new {
 
     $self->{alignment} = [];  # MRS::Client::Clustal::Sequence
     if ($data->{alignment}) {
-	foreach my $sequence (@{ $data->{alignment} }) {
-	    push (@{ $self->{alignment} },
-		  MRS::Client::Clustal::Sequence->_new ($sequence));
-	}
+        foreach my $sequence (@{ $data->{alignment} }) {
+            push (@{ $self->{alignment} },
+                  MRS::Client::Clustal::Sequence->_new ($sequence));
+        }
     }
 
     # done
@@ -131,15 +140,15 @@ sub as_string {
     # find the lenth of the longest sequence ID
     my $max_id_len = 0;
     foreach my $seq (@{ $self->alignment }) {
-	my $len = length $seq->id;
-	$max_id_len = $len if $len > $max_id_len;
+        my $len = length $seq->id;
+        $max_id_len = $len if $len > $max_id_len;
     }
 
     # format alignment
     my $format = "%-${max_id_len}s: %s\n";
     my $r = '';
     foreach my $seq (@{ $self->alignment }) {
-	$r .= sprintf ($format, $seq->id, $seq->sequence);
+        $r .= sprintf ($format, $seq->id, $seq->sequence);
     }
     return $r;
 }
@@ -150,6 +159,9 @@ sub as_string {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Clustal::Sequence;
+{
+  $MRS::Client::Clustal::Sequence::VERSION = '0.600100';
+}
 
 sub _new {
     # $data is a hashref (from $answer->{parameters})
@@ -177,7 +189,17 @@ sub as_string {
 }
 
 1;
-__END__
+
+
+=pod
+
+=head1 NAME
+
+MRS::Client - Clustal invocation and results
+
+=head1 VERSION
+
+version 0.600100
 
 =head1 NAME
 
@@ -189,4 +211,19 @@ For the full documentation of the project see please:
 
    perldoc MRS::Client
 
+=head1 AUTHOR
+
+Martin Senger <martin.senger@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
+
+__END__
+

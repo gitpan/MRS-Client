@@ -3,9 +3,15 @@
 # Authors: Martin Senger <martin.senger@gmail.com>
 # For copyright and disclaimer see MRS::Client pod.
 #
-# Representation of a MRS databank - on a client side.
+# ABSTRACT: Representation of a MRS databank - on a client side
+# PODNAME: MRS::Client
 #-----------------------------------------------------------------
+use warnings;
+use strict;
 package MRS::Client::Databank;
+{
+  $MRS::Client::Databank::VERSION = '0.600100';
+}
 
 use Carp;
 use MRS::Constants;
@@ -26,7 +32,7 @@ sub new {
 
     # check that we have at least an ID
     croak ("The MRS::Client::Databank instance cannot be created without an ID.\n")
-	unless $self->{id};
+        unless $self->{id};
 
     # done
     return $self;
@@ -48,10 +54,10 @@ sub version {
     my $self = shift;
     my $r = '';
     if ($self->files) {
-	foreach my $file (@{ $self->files }) {
-	    $r .= ', ' if $r;
-	    $r .= $file->version;
-	}
+        foreach my $file (@{ $self->files }) {
+            $r .= ', ' if $r;
+            $r .= $file->version;
+        }
     }
     return $r;
 }
@@ -71,7 +77,7 @@ sub as_string {
     $r .= "URL:     " . $self->{url}  . "\n" if $self->{url};
     $r .= "Parser:  " . $self->parser  . "\n" if $self->parser;
     $r .= "blastable\n" if $self->{blastable};
-    $r .= "Files:\n\t" . join ("\n\t", map { s/\n/\n\t/g; $_ } @{ $self->files } ) . "\n";
+    $r .= "Files:\n\t" . join ("\n\t", map { my $file = $_; $file =~ s/\n/\n\t/g; $file } @{ $self->files } ) . "\n";
     $r .= "Indices:\n\t" . join ("\n\t", @{ $self->indices } ) . "\n";
     return $r;
 }
@@ -86,18 +92,18 @@ sub _populate_info {
 
     $self->{client}->_create_proxy ('search');
     my $answer = $self->{client}->_call (
-	$self->{client}->{search_proxy}, 'GetDatabankInfo',
-	{ db => $self->{id} });
+        $self->{client}->{search_proxy}, 'GetDatabankInfo',
+        { db => $self->{id} });
     $self->{info_retrieved} = 1;
     if (defined $answer) {
-	foreach my $info (@{ $answer->{parameters}->{info} }) {
-	    foreach my $key (keys %$info) {
-		$self->{$key} = $info->{$key};
-	    }
-	}
-	# special treatment for 'files': create File objects
-	$self->{files} = 
-	    [ map { MRS::Client::Databank::File->new (%$_) } @{ $self->{files} } ];
+        foreach my $info (@{ $answer->{parameters}->{info} }) {
+            foreach my $key (keys %$info) {
+                $self->{$key} = $info->{$key};
+            }
+        }
+        # special treatment for 'files': create File objects
+        $self->{files} =
+            [ map { MRS::Client::Databank::File->new (%$_) } @{ $self->{files} } ];
     }
     return $self;
 }
@@ -112,13 +118,13 @@ sub _populate_indices {
 
     $self->{client}->_create_proxy ('search');
     my $answer = $self->{client}->_call (
-	$self->{client}->{search_proxy}, 'GetIndices',
-	{ db => $self->{id} });
+        $self->{client}->{search_proxy}, 'GetIndices',
+        { db => $self->{id} });
     $self->{indices_retrieved} = 1;
     if (defined $answer) {
-	$self->{indices} =
-	    [ map { MRS::Client::Databank::Index->new (%$_) }
-	      @{ $answer->{parameters}->{indices} } ];
+        $self->{indices} =
+            [ map { MRS::Client::Databank::Index->new (%$_) }
+              @{ $answer->{parameters}->{indices} } ];
     }
     return $self;
 }
@@ -133,13 +139,13 @@ sub _populate_count {
 
     $self->{client}->_create_proxy ('search');
     my $answer = $self->{client}->_call (
-	$self->{client}->{search_proxy}, 'Count',
-	{ db => $self->{id},
-	  booleanquery => '*'});
+        $self->{client}->{search_proxy}, 'Count',
+        { db => $self->{id},
+          booleanquery => '*'});
     if (defined $answer) {
-	$self->{count} = $answer->{parameters}->{response}->bstr();
+        $self->{count} = $answer->{parameters}->{response};
     } else {
-	$self->{count} = 0;
+        $self->{count} = 0;
     }
     return $self;
 }
@@ -168,19 +174,19 @@ sub entry {
     my ($self, $entry_id, $format, $xformat) = @_;
 
     croak "Empty entry ID. Cannot do anything, I am afraid.\n"
-	unless $entry_id;
+        unless $entry_id;
     $format = MRS::EntryFormat->PLAIN
-	unless MRS::EntryFormat->check ($format);
+        unless MRS::EntryFormat->check ($format);
     warn ("Method 'entry' does not support format HEADER. Reversed to TITLE.\n")
-	and $format = MRS::EntryFormat->TITLE
-	if $format eq MRS::EntryFormat->HEADER;
+        and $format = MRS::EntryFormat->TITLE
+        if $format eq MRS::EntryFormat->HEADER;
 
     $self->{client}->_create_proxy ('search');
     my $answer = $self->{client}->_call (
-	$self->{client}->{search_proxy}, 'GetEntry',
-	{ db => $self->{id},
-	  id => $entry_id,
-	  format => $format });
+        $self->{client}->{search_proxy}, 'GetEntry',
+        { db => $self->{id},
+          id => $entry_id,
+          format => $format });
     return '' unless defined $answer;
     if ($xformat and $format eq MRS::EntryFormat->HTML) {
         return $self->_xformat ($xformat, $answer->{parameters}->{entry});
@@ -195,30 +201,30 @@ sub _xformat {
 
     # in these case, the returned content will be different from the given $html
     my $change_wanted = ( $xformat->{MRS::XFormat::CSS_CLASS()}    or
-			  $xformat->{MRS::XFormat::REMOVE_DEAD()}  or
-			  $xformat->{MRS::XFormat::URL_PREFIX} );
+                          $xformat->{MRS::XFormat::REMOVE_DEAD()}  or
+                          $xformat->{MRS::XFormat::URL_PREFIX} );
 
     # in this case, we need a list of available databanks
     # (which may be already provided in $xformat itself)
     if ($xformat->{MRS::XFormat::REMOVE_DEAD()}) {
-	if (ref ($xformat->{MRS::XFormat::REMOVE_DEAD()}) ne 'ARRAY' ) {
-	    $xformat->{MRS::XFormat::REMOVE_DEAD()} = [map { $_->id } $self->{client}->db];
-	}
-	# internally, change it to a hashref
-	$xformat->{'_dbs_'} = { map { $_ => 1 } @{ $xformat->{MRS::XFormat::REMOVE_DEAD()} } };
+        if (ref ($xformat->{MRS::XFormat::REMOVE_DEAD()}) ne 'ARRAY' ) {
+            $xformat->{MRS::XFormat::REMOVE_DEAD()} = [map { $_->id } $self->{client}->db];
+        }
+        # internally, change it to a hashref
+        $xformat->{'_dbs_'} = { map { $_ => 1 } @{ $xformat->{MRS::XFormat::REMOVE_DEAD()} } };
     }
 
     my $regex = '(<a (?:.+?)</a>)';
     if ($xformat->{MRS::XFormat::ONLY_LINKS()}) {
-	my @links = ( $html =~ m{$regex}migo );
-	if ($change_wanted) {
-	    return [ map { $self->_change_link ($xformat, $_) } @links ];
-	} else {
-	    return \@links
-	}
+        my @links = ( $html =~ m{$regex}migo );
+        if ($change_wanted) {
+            return [ map { $self->_change_link ($xformat, $_) } @links ];
+        } else {
+            return \@links
+        }
     } else {
-	$html =~ s{$regex}{$self->_change_link ($xformat, $1)}emigo;
-	return $html;
+        $html =~ s{$regex}{$self->_change_link ($xformat, $1)}emigo;
+        return $html;
     }
 }
 
@@ -226,16 +232,16 @@ sub _xformat {
 sub _change_link {
     my ($self, $xformat, $link) = @_;
     if (my $class = $xformat->{css_class}) {
-	$link =~ s/(<a )/$1class="$class" /oi;
+        $link =~ s/(<a )/$1class="$class" /oi;
     }
     if ($xformat->{url_prefix}) {
-	$link =~ s{(href=")(query|entry)}{$1$xformat->{url_prefix}$2}oi;
+        $link =~ s{(href=")(query|entry)}{$1$xformat->{url_prefix}$2}oi;
     }
     if ($xformat->{remove_dead_links}) {
-	my ($db) = $link =~ m{[.]do[?]db=(\w+?)&amp;}o;
-	if ($db and not $xformat->{'_dbs_'}->{$db}) {
-	    $link =~ s{<[^>]*>}{}g;
-	}
+        my ($db) = $link =~ m{[.]do[?]db=(\w+?)&amp;}o;
+        if ($db and not $xformat->{'_dbs_'}->{$db}) {
+            $link =~ s{<[^>]*>}{}g;
+        }
     }
     return $link;
 }
@@ -246,6 +252,9 @@ sub _change_link {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Databank::File;
+{
+  $MRS::Client::Databank::File::VERSION = '0.600100';
+}
 
 sub new {
     my ($class, %file) = @_;
@@ -261,9 +270,9 @@ sub new {
 }
 
 sub id             { return shift->{uuid}; }
-sub raw_data_size  { return shift->{rawDataSize}->bstr(); }
-sub entries_count  { return shift->{entries}->bstr(); }
-sub file_size      { return shift->{fileSize}->bstr(); }
+sub raw_data_size  { return shift->{rawDataSize}; }
+sub entries_count  { return shift->{entries}; }
+sub file_size      { return shift->{fileSize}; }
 sub version        { return shift->{version}; }
 sub last_modified  { return shift->{modificationDate}; }
 
@@ -285,6 +294,9 @@ sub as_string {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Databank::Index;
+{
+  $MRS::Client::Databank::Index::VERSION = '0.600100';
+}
 
 sub new {
     my ($class, %args) = @_;
@@ -301,19 +313,29 @@ sub new {
 
 sub id          { return shift->{id}; }
 sub description { return shift->{description}; }
-sub count       { return shift->{count}->bstr(); }
+sub count       { return shift->{count} }
 sub type        { return shift->{type}; }
 
 use overload q("") => "as_string";
 sub as_string {
     my $self = shift;
     return sprintf (
-	"%-15s%9d  %-9s %s",
-	$self->id, $self->count, $self->type, $self->description);
+        "%-15s%9d  %-9s %s",
+        $self->id, $self->count, $self->type, $self->description);
 }
 
 1;
-__END__
+
+
+=pod
+
+=head1 NAME
+
+MRS::Client - Representation of a MRS databank - on a client side
+
+=head1 VERSION
+
+version 0.600100
 
 =head1 NAME
 
@@ -325,4 +347,19 @@ For the full documentation of the project see please:
 
    perldoc MRS::Client
 
+=head1 AUTHOR
+
+Martin Senger <martin.senger@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
+
+__END__
+

@@ -3,9 +3,15 @@
 # Authors: Martin Senger <martin.senger@gmail.com>
 # For copyright and disclaimer see MRS::Client pod.
 #
-# Representation of an MRS query - on a client side.
+# ABSTRACT: Representation of an MRS query - on a client side
+# PODNAME: MRS::Client
 #-----------------------------------------------------------------
+use warnings;
+use strict;
 package MRS::Client::Find;
+{
+  $MRS::Client::Find::VERSION = '0.600100';
+}
 
 use Carp;
 use Math::BigInt;
@@ -20,16 +26,16 @@ sub new {
     # parse the arguments and fill them into $self
     croak "Empty query request. Cannot do anything.\n" unless @_ > 0;
     if (@_ == 1) {
-	my $arg = shift;
-	if (ref ($arg) eq 'ARRAY') {
-	    push (@_, and => $arg);
-	} elsif (ref ($arg) eq 'HASH') {
-	    push (@_, %$arg);
-	} elsif (MRS::Operator->contains ($arg)) {
-	    push (@_, query => $arg);
-	} else {
-	    push (@_, and => [$arg]);
-	}
+        my $arg = shift;
+        if (ref ($arg) eq 'ARRAY') {
+            push (@_, and => $arg);
+        } elsif (ref ($arg) eq 'HASH') {
+            push (@_, %$arg);
+        } elsif (MRS::Operator->contains ($arg)) {
+            push (@_, query => $arg);
+        } else {
+            push (@_, and => [$arg]);
+        }
     }
     my (%args) = @_;
     foreach my $key (keys %args) {
@@ -39,77 +45,77 @@ sub new {
     # some arguments checking and filling default values
     $self->{format} = MRS::EntryFormat->PLAIN unless $self->{format};
     warn ("Unrecognized output format '" . $self->{format} . "'. Reversed to default.\n")
-	and $self->{format} = MRS::EntryFormat->PLAIN
-	unless MRS::EntryFormat->check ($self->{format});
+        and $self->{format} = MRS::EntryFormat->PLAIN
+        unless MRS::EntryFormat->check ($self->{format});
 
     $self->{algorithm} = MRS::Algorithm->VECTOR unless $self->{algorithm};
     warn ("Unrecognized scoring algorithm '" . $self->{algorithm} . "'. Reversed to default.\n")
-	and $self->{algorithm} = MRS::Algorithm->VECTOR
-	unless MRS::Algorithm->check ($self->{algorithm});
+        and $self->{algorithm} = MRS::Algorithm->VECTOR
+        unless MRS::Algorithm->check ($self->{algorithm});
 
     $self->{offset} = 0 unless defined $self->{offset};
     warn ("Parameter 'offset' is not an integer. Reversed to zero.\n")
-	and $self->{offset} = 0
-	unless $self->_is_int ($self->{offset});
+        and $self->{offset} = 0
+        unless $self->_is_int ($self->{offset});
     warn ("Parameter 'offset' is negative: " . $self->{offset} . ". Reversed to zero.\n")
-	and $self->{offset} = 0
-	if $self->{offset} < 0;
+        and $self->{offset} = 0
+        if $self->{offset} < 0;
 
     if (defined $self->{start}) {
-	warn ("Parameter 'start' is not an integer. Reversed to one.\n")
-	    and $self->{start} = 1
-	    unless $self->_is_int ($self->{start});
-	if ($self->{start} > 0) {
-	    $self->{offset} = $self->{start} - 1;
-	} else {
-	    warn ("Parameter 'start' is not positive: " . $self->{start} . ". Ignored.\n");
-	}
+        warn ("Parameter 'start' is not an integer. Reversed to one.\n")
+            and $self->{start} = 1
+            unless $self->_is_int ($self->{start});
+        if ($self->{start} > 0) {
+            $self->{offset} = $self->{start} - 1;
+        } else {
+            warn ("Parameter 'start' is not positive: " . $self->{start} . ". Ignored.\n");
+        }
     }
 
     $self->{max_entries} = 0 unless $self->{max_entries};
     warn ("Parameter 'max_entries' is not an integer. Reversed to zero.\n")
-    	and $self->{max_entries} = 0
-    	unless $self->_is_int ($self->{max_entries});
+        and $self->{max_entries} = 0
+        unless $self->_is_int ($self->{max_entries});
     warn ("Parameter 'max_entries' is negative: " . $self->{max_entries} . ". Reversed to zero.\n")
-	and $self->{max_entries} = 0
-	if $self->{max_entries} < 0;
+        and $self->{max_entries} = 0
+        if $self->{max_entries} < 0;
 
     # 'and' and 'or' should be refarrays
     $self->{and} = [ $self->{and} ] if $self->{and} and not ref ($self->{and});
     $self->{or} = [ $self->{or} ] if $self->{or} and not ref ($self->{or});
 
     warn ("Both 'and' and 'or' parameters given. The latter ignored.\n")
-	and delete ($self->{or})
-	if defined $self->{and} and defined $self->{or};
+        and delete ($self->{or})
+        if defined $self->{and} and defined $self->{or};
 
     $self->{and} = [$self->{query}] and undef ($self->{query})
-	unless
-	MRS::Operator->contains ($self->{query}) or
-	(defined $self->{and} and @{ $self->{and} } > 0) or
-	(defined $self->{or} and @{ $self->{or} } > 0);
+        unless
+        MRS::Operator->contains ($self->{query}) or
+        (defined $self->{and} and @{ $self->{and} } > 0) or
+        (defined $self->{or} and @{ $self->{or} } > 0);
 
     # if some terms contain boolean operators, move them to query
     if (defined $self->{and}) {
-    	my @terms = ();
-    	while (my $term = shift (@{ $self->{and} })) {
-    	    if (MRS::Operator->contains ($term)) {
-    		$self->{query} = '' unless defined $self->{query};
-    		$self->{query} .= ' AND ' if $self->{query};
-    		$self->{query} .= $term;
-    	    } else {
-    		push (@terms, $term);
-    	    }
-    	}
-	push (@{ $self->{and} }, $_) foreach @terms;
+        my @terms = ();
+        while (my $term = shift (@{ $self->{and} })) {
+            if (MRS::Operator->contains ($term)) {
+                $self->{query} = '' unless defined $self->{query};
+                $self->{query} .= ' AND ' if $self->{query};
+                $self->{query} .= $term;
+            } else {
+                push (@terms, $term);
+            }
+        }
+        push (@{ $self->{and} }, $_) foreach @terms;
     }
 
     $self->{terms} = ($self->{and} or $self->{or});
     $self->{all_terms_required} = ($self->{and} ? 1 : 0);
 
     croak "Empty query request. Cannot do anything.\n"
-	unless
-	(defined $self->{terms} and @{ $self->{terms} } > 0) or
-	$self->{query};
+        unless
+        (defined $self->{terms} and @{ $self->{terms} } > 0) or
+        $self->{query};
 
     # create, so far empty, buffer for hits/results
     $self->{count} = 0;
@@ -138,27 +144,27 @@ sub _read_next_hits {
 
     # using ranked query, possibly combined with a boolean query
     my $answer = $self->{client}->_call (
-	$self->{client}->{search_proxy}, 'Find',
-	{ db               => $self->{db},
-	  queryterms       => $self->{terms},
-	  algorithm        => $self->{algorithm},
-	  alltermsrequired => $self->{all_terms_required},
-	  booleanfilter    => ($self->{query} or ''),
-	  resultoffset     => $self->{offset},
-	  maxresultcount   => 200,
-	});
+        $self->{client}->{search_proxy}, 'Find',
+        { db               => $self->{db},
+          queryterms       => $self->{terms},
+          algorithm        => $self->{algorithm},
+          alltermsrequired => $self->{all_terms_required},
+          booleanfilter    => ($self->{query} or ''),
+          resultoffset     => $self->{offset},
+          maxresultcount   => 200,
+        });
 
     if (defined $answer) {
-#	use Data::Dumper;
-#	print Dumper ($answer);
-	my $response = $answer->{parameters}->{response};
-	warn ("Unexpected response length: " . (@$response+0) . "\n")
-	    if @$response > 1;   # developer's error
-	$self->{count} = $$response[0]->{count};
-	foreach my $hit (@{ $$response[0]->{hits} }) {
-	    push (@{ $self->{hits} }, MRS::Client::Hit->new (%$hit, db => $self->db));
-	}
-	$self->{offset} += @{ $self->{hits} };
+#       use Data::Dumper;
+#       print Dumper ($answer);
+        my $response = $answer->{parameters}->{response};
+        warn ("Unexpected response length: " . (@$response+0) . "\n")
+            if @$response > 1;   # developer's error
+        $self->{count} = $$response[0]->{count};
+        foreach my $hit (@{ $$response[0]->{hits} }) {
+            push (@{ $self->{hits} }, MRS::Client::Hit->new (%$hit, db => $self->db));
+        }
+        $self->{offset} += @{ $self->{hits} };
     }
 
     # we may be at the end
@@ -175,9 +181,9 @@ sub _process_hit {
     my ($self, $hit) = @_;
 
     if ($self->{format} eq MRS::EntryFormat->HEADER) {
-	return $hit;
+        return $hit;
     } else {
-	return $self->{dbobj}->entry ($hit->{id}, $self->{format}, $self->{xformat});
+        return $self->{dbobj}->entry ($hit->{id}, $self->{format}, $self->{xformat});
     }
 }
 
@@ -188,12 +194,12 @@ sub next {
     my $self = shift;
 
     # are we at the end?
-    return undef if $self->{eod} or
-	($self->max_entries > 0 and $self->{delivered} >= $self->max_entries);
+    return if $self->{eod} or
+        ($self->max_entries > 0 and $self->{delivered} >= $self->max_entries);
 
     # do we have any not-yet delivered hits?
     my $next_hit = (shift @{ $self->{hits} } or $self->_read_next_hits);
-    return undef unless $next_hit;
+    return unless $next_hit;
     $self->{delivered}++;
     return $self->_process_hit ($next_hit);
 }
@@ -228,6 +234,9 @@ sub as_string {
 #
 #-----------------------------------------------------------------
 package MRS::Client::MultiFind;
+{
+  $MRS::Client::MultiFind::VERSION = '0.600100';
+}
 use Carp;
 use base qw( MRS::Client::Find );
 
@@ -243,7 +252,7 @@ sub db_counts {
     my $self = shift;
     my %counts = ();
     foreach my $child (@{ $self->{children} }) {
-	$counts{$child->db} = $child->count;
+        $counts{$child->db} = $child->count;
     }
     return %counts;
 }
@@ -254,7 +263,7 @@ sub as_string {
     my $r = $self->SUPER::as_string;
     my %db_counts = $self->db_counts;
     foreach my $db (sort keys %db_counts ) {
-	$r .= sprintf ("\t%-15s%9d\n", $db, $db_counts{$db});
+        $r .= sprintf ("\t%-15s%9d\n", $db, $db_counts{$db});
     }
     return $r;
 }
@@ -271,40 +280,40 @@ sub _read_first_hits {
 
     # using ranked query, possibly combined with a boolean query
     my $answer = $self->{client}->_call (
-	$self->{client}->{search_proxy}, 'Find',
-	{ db               => 'all',
-	  queryterms       => $self->{terms},
-	  algorithm        => $self->{algorithm},
-	  alltermsrequired => $self->{all_terms_required},
-	  booleanfilter    => ($self->{query} or ''),
-	  resultoffset     => $self->{offset},
-	  maxresultcount   => 5,  # maximum accepted by the MRS server 
-	});
+        $self->{client}->{search_proxy}, 'Find',
+        { db               => 'all',
+          queryterms       => $self->{terms},
+          algorithm        => $self->{algorithm},
+          alltermsrequired => $self->{all_terms_required},
+          booleanfilter    => ($self->{query} or ''),
+          resultoffset     => $self->{offset},
+          maxresultcount   => 5,  # maximum accepted by the MRS server
+        });
 
     my $total_count = Math::BigInt->new;
     my @finds = ();
     if (defined $answer) {
-	foreach my $data (@{ $answer->{parameters}->{response} }) {
-	    if ($data->{count} > 0) {
-		$total_count += $data->{count};
+        foreach my $data (@{ $answer->{parameters}->{response} }) {
+            if ($data->{count} > 0) {
+                $total_count += $data->{count};
 
-		# create an individual find (by cloning args from me)
-		my $find = MRS::Client::Find->new (@{ $self->{args} });
-		$find->{db} = $data->{db};
-		$find->{dbobj} = $self->{client}->db ($data->{db});
-		$find->{client} = $self->{client};
+                # create an individual find (by cloning args from me)
+                my $find = MRS::Client::Find->new (@{ $self->{args} });
+                $find->{db} = $data->{db};
+                $find->{dbobj} = $self->{client}->db ($data->{db});
+                $find->{client} = $self->{client};
 
-		# fill them with the hits we already have read
-		$find->{count} = $data->{count};
-		foreach my $hit (@{ $data->{hits} }) {
-		    push (@{ $find->{hits} }, MRS::Client::Hit->new (%$hit, db => $find->{db}));
-		}
-		$find->{offset} += @{ $data->{hits} };
+                # fill them with the hits we already have read
+                $find->{count} = $data->{count};
+                foreach my $hit (@{ $data->{hits} }) {
+                    push (@{ $find->{hits} }, MRS::Client::Hit->new (%$hit, db => $find->{db}));
+                }
+                $find->{offset} += @{ $data->{hits} };
 
-		# store it
-		push (@finds, $find);
-	    }
-	}
+                # store it
+                push (@finds, $find);
+            }
+        }
     }
     $self->{count} = $total_count;
     return \@finds;
@@ -318,7 +327,7 @@ sub next {
     my $self = shift;
 
     # are we at the end?
-    return undef if $self->{eod};
+    return if $self->{eod};
 
     # do we have any not-yet delivered hits?
     my $next_hit = (${ $self->{children}} [$self->{current}])->next;
@@ -327,12 +336,12 @@ sub next {
     # move to the next databank
     $self->{current}++;
     if ($self->{current} >= @{ $self->{children}}) {
-	# we reached the ultimate end
-	$self->{eod} = 1;
-	return undef;
+        # we reached the ultimate end
+        $self->{eod} = 1;
+        return;
     } else {
-	# start reading the next databank
-	return $self->next;
+        # start reading the next databank
+        return $self->next;
     }
 }
 
@@ -342,6 +351,9 @@ sub next {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Hit;
+{
+  $MRS::Client::Hit::VERSION = '0.600100';
+}
 
 sub new {
     my ($class, %hit) = @_;
@@ -371,7 +383,17 @@ sub as_string {
 }
 
 1;
-__END__
+
+
+=pod
+
+=head1 NAME
+
+MRS::Client - Representation of an MRS query - on a client side
+
+=head1 VERSION
+
+version 0.600100
 
 =head1 NAME
 
@@ -383,4 +405,19 @@ For the full documentation of the project see please:
 
    perldoc MRS::Client
 
+=head1 AUTHOR
+
+Martin Senger <martin.senger@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
+
+__END__
+

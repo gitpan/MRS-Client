@@ -56,7 +56,7 @@ is ($find->terms->[0], 'human',         'Find: refarray argument 2');
 is ($find->terms->[1], 'mouse',         'Find: refarray argument 3');
 
 $find = MRS::Client::Find->new (and   => ['human', 'mouse'],
-				query => 'cool');
+                                query => 'cool');
 is (@{ $find->terms }, 2,               'Find: refhash argument');
 is ($find->terms->[0], 'human',         'Find: refhash argument 2');
 is ($find->terms->[1], 'mouse',         'Find: refhash argument 3');
@@ -73,11 +73,11 @@ is ($find->terms->[1], 'two',           'Find: argument OR 2');
 ok (!$find->all_terms_required,         'Find: argument OR 3');
 
 foreach my $format (MRS::EntryFormat->PLAIN,
-		    MRS::EntryFormat->TITLE,
-		    MRS::EntryFormat->HTML,
-		    MRS::EntryFormat->FASTA,
-		    MRS::EntryFormat->SEQUENCE,
-		    MRS::EntryFormat->HEADER) {
+                    MRS::EntryFormat->TITLE,
+                    MRS::EntryFormat->HTML,
+                    MRS::EntryFormat->FASTA,
+                    MRS::EntryFormat->SEQUENCE,
+                    MRS::EntryFormat->HEADER) {
     eval { $find = MRS::Client::Find->new (query => 'some', format => $format) };
     ok (!$@, "Find: correct format $format");
 }
@@ -88,8 +88,8 @@ foreach my $format (MRS::EntryFormat->PLAIN,
 }
 
 foreach my $algorithm (MRS::Algorithm->VECTOR,
-		       MRS::Algorithm->DICE,
-		       MRS::Algorithm->JACCARD) {
+                       MRS::Algorithm->DICE,
+                       MRS::Algorithm->JACCARD) {
     eval { $find = MRS::Client::Find->new (query => 'some', algorithm => $algorithm) };
     ok (!$@, "Find: correct algorithm $algorithm");
 }

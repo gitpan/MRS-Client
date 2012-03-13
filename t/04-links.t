@@ -1,7 +1,7 @@
 #!perl -w
 
-use Test::More qw(no_plan);
-#use Test::More tests => 12;
+#use Test::More qw(no_plan);
+use Test::More tests => 2;
 
 #-----------------------------------------------------------------
 # Return a fully qualified name of the given file in the test
@@ -32,13 +32,13 @@ isnt ($db, undef, 'dummy databank');
 my $html;
 {
     open $FILE, "<", $input
-	or die "Can't open '$input': $!\n";
+        or die "Can't open '$input': $!\n";
     undef $/;
     $html = <$FILE>;
 }
 my $xformat = {css_class =>'mrslink'};
 
-$db->_xformat ($xformat, $html); 
+$db->_xformat ($xformat, $html);
 
 
 __END__

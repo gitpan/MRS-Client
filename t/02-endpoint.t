@@ -36,20 +36,20 @@ delete $ENV{'MRS_ADMIN_URL'};
 
 # mixed setting endpoints and host
 $client = MRS::Client->new (search_url  => 'k',
-			    blast_url   => 'l',
-			    clustal_url => 'm',
-			    admin_url   => 'n',
-			    host        => 'myhost');
+                            blast_url   => 'l',
+                            clustal_url => 'm',
+                            admin_url   => 'n',
+                            host        => 'myhost');
 is ($client->search_url,  'k', 'new search_url and host');
 is ($client->blast_url,   'l', 'new blast_url and host');
 is ($client->clustal_url, 'm', 'new clustal_url and host');
 is ($client->admin_url,   'n', 'new admin_url and host');
 
 $client = MRS::Client->new (host        => 'myhostess',
-			    search_url  => 'k',
-			    blast_url   => 'l',
-			    clustal_url => 'm',
-			    admin_url   => 'n');
+                            search_url  => 'k',
+                            blast_url   => 'l',
+                            clustal_url => 'm',
+                            admin_url   => 'n');
 is ($client->search_url,  'k', 'new host and search_url');
 is ($client->blast_url,   'l', 'new host and blast_url');
 is ($client->clustal_url, 'm', 'new host and clustal_url');
