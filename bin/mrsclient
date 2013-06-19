@@ -10,10 +10,8 @@
 #-----------------------------------------------------------------------------
 use warnings;
 use strict;
-package main;
-{
-  $main::VERSION = '0.600100';
-}  # this is here to make Dist:Dzilla's PkgVersion happy
+
+our $VERSION = '1.0.0'; # VERSION
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
@@ -36,10 +34,12 @@ where 'options' are:
    -e <endpoint>  URL of the MRS search service
    -S <name>      service name of the MRS search service
    -H <hostname>  endpoint host (with standard ports)
+   -V <5|6>       version of the MRS service
    -E             list all endpoints and service names
    -l             list of all available databanks IDs
    -L             list of all available databanks details
    -C             list entry counts of all databanks
+   -y             list of all available databank aliases
 
    -d <databank>  info about a databank,
                   or a databank that will be searched
@@ -87,10 +87,13 @@ use vars qw/ $opt_h $opt_v /;                       # general
 use vars qw/ $opt_e $opt_S $opt_E $opt_H $opt_X/;   # endpoints
 use vars qw/ $opt_a $opt_o $opt_q $opt_f $opt_A /;  # query
 use vars qw/ $opt_p $opt_m $opt_n $opt_s /;
-use vars qw/ $opt_d $opt_l $opt_L $opt_C $opt_c /;  # databanks
+use vars qw/ $opt_d $opt_l $opt_L $opt_C $opt_c $opt_y/;  # databanks
 use vars qw/ $opt_i $opt_x/;
-my $switches = 'aAdefHimoqsSxX';   # switches taking an argument
+use vars qw/ $opt_V $opt_D/;
+my $switches = 'aAdefHimoqsSVxX';   # switches taking an argument
 getopt ($switches);
+
+# less documented options: -D, -x, -X
 
 # help wanted?
 if ($opt_h or @all_args == 0) {
@@ -116,6 +119,8 @@ push (@args, search_url => $opt_e) if defined $opt_e;
 push (@args, admin_url => $opt_X) if defined $opt_X;
 push (@args, host => $opt_H) if defined $opt_H;
 push (@args, search_service => $opt_S) if defined $opt_S;
+push (@args, mrs_version => $opt_V) if defined $opt_V;
+push (@args, debug => $opt_D) if defined $opt_D;
 our $client = MRS::Client->new (@args);
 
 # print environment (where to find server, etc.)
@@ -128,18 +133,33 @@ if (defined $opt_E) {
     say 'Blast service name:   ' . $client->blast_service   if $client->blast_service;
     say 'Blast WSDL:           ' . $client->blast_wsdl      if $client->blast_wsdl;
     say '';
-    say 'Clustal URL:          ' . $client->clustal_url     if $client->clustal_url;;
-    say 'Clustal service name: ' . $client->clustal_service if $client->clustal_service;
-    say 'Clustal WSDL:         ' . $client->clustal_wsdl    if $client->clustal_wsdl;
-    say '';
-    say 'Admin URL:            ' . $client->admin_url       if $client->admin_url;;
-    say 'Admin service name:   ' . $client->admin_service   if $client->admin_service;
-    say 'Admin WSDL:           ' . $client->admin_wsdl      if $client->admin_wsdl;
+
+    if (defined $opt_V and $opt_V ne 6) {
+        say 'Clustal URL:          ' . $client->clustal_url     if $client->clustal_url;;
+        say 'Clustal service name: ' . $client->clustal_service if $client->clustal_service;
+        say 'Clustal WSDL:         ' . $client->clustal_wsdl    if $client->clustal_wsdl;
+        say '';
+        say 'Admin URL:            ' . $client->admin_url       if $client->admin_url;;
+        say 'Admin service name:   ' . $client->admin_service   if $client->admin_service;
+        say 'Admin WSDL:           ' . $client->admin_wsdl      if $client->admin_wsdl;
+    }
 }
 
-# list of databanks IDs
-if (defined $opt_l) {
-    say join ("\n", map { $_->id } $client->db);
+# list of databanks IDs and/or aliases
+if (defined $opt_l or defined $opt_y) {
+    my @dbs = $client->db;
+    say join ("\n", map { $_->id } @dbs) if $opt_l;
+    if ($opt_y) {
+        my $all_aliases = {};
+        foreach my $db (@dbs) {
+            my $aliases = $db->aliases || [];
+            foreach my $alias (@$aliases) {
+                $all_aliases->{$alias} = 1;
+            }
+        }
+        say join ("\n", sort keys %$all_aliases)
+            if keys $all_aliases;
+    }
 }
 
 # list of databanks details (info)
@@ -155,7 +175,13 @@ if (defined $opt_C) {
 # info about a single database
 if ( $opt_d and @ARGV == 0 and not ($opt_a or $opt_o or $opt_q or $opt_i) ) {
     if ($opt_c) {
-        say $client->db ($opt_d)->count;
+        if ($opt_d eq 'all') {
+            my $total = 0;
+            map { $total += $_->count; } $client->db;
+            say "$total";
+        } else {
+            say $client->db ($opt_d)->count;
+        }
     } else {
         say $client->db ($opt_d);
     }
@@ -243,7 +269,7 @@ MRS::Client - program accessing MRS Retrieval System
 
 =head1 VERSION
 
-version 0.600100
+version 1.0.0
 
 =head1 AUTHOR
 
@@ -251,7 +277,7 @@ Martin Senger <martin.senger@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+This software is copyright (c) 2013 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
@@ -260,6 +286,4 @@ the same terms as the Perl 5 programming language system itself.
 
 
 __END__
-TBD:
-* admin calls
 

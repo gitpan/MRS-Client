@@ -9,10 +9,8 @@
 use strict;
 use warnings;
 package MRS::Constants;
-{
-  $MRS::Constants::VERSION = '0.600100';
-}
 
+our $VERSION = '1.0.0'; # VERSION
 
 #-----------------------------------------------------------------
 #
@@ -20,9 +18,8 @@ package MRS::Constants;
 #
 #-----------------------------------------------------------------
 package MRS::EntryFormat;
-{
-  $MRS::EntryFormat::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use constant {
     PLAIN    => 'plain',
@@ -34,14 +31,17 @@ use constant {
 };
 
 #-----------------------------------------------------------------
-# Return 1 only if $format is one of the recognized constants
+# Return 1 only if $format is one of the recognized constants.
+# $client is here only because it knows what MRS version we are
+# working with.
 # -----------------------------------------------------------------
 sub check {
-    my ($class, $format) = @_;
+    my ($class, $format, $client) = @_;
     return 0 unless $format;
-    my $regex =
-        PLAIN . '|' . TITLE . '|' . HTML . '|' . FASTA . '|' . SEQUENCE .
-        '|' . HEADER;
+
+    my $regex = PLAIN . '|' . TITLE . '|' . FASTA . '|' . HEADER;
+    $regex .= '|' . HTML .  '|' . SEQUENCE unless $client && $client->is_v6;
+
     my $regex_c = qr/^($regex)$/;
     $format =~ $regex_c;
 }
@@ -52,9 +52,8 @@ sub check {
 #
 #-----------------------------------------------------------------
 package MRS::XFormat;
-{
-  $MRS::XFormat::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use constant {
     CSS_CLASS   => 'css_class',
@@ -81,9 +80,8 @@ sub check {
 #
 #-----------------------------------------------------------------
 package MRS::Algorithm;
-{
-  $MRS::Algorithm::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use constant {
     VECTOR   => 'Vector',
@@ -108,9 +106,8 @@ sub check {
 #
 #-----------------------------------------------------------------
 package MRS::Operator;
-{
-  $MRS::Operator::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use constant {
     CONTAINS       => ':',
@@ -151,9 +148,8 @@ sub contains {
 #
 #-----------------------------------------------------------------
 package MRS::JobStatus;
-{
-  $MRS::JobStatus::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use constant {
     UNKNOWN  => 'unknown',
@@ -180,9 +176,8 @@ sub check {
 #
 #-----------------------------------------------------------------
 package MRS::BlastOutputFormat;
-{
-  $MRS::BlastOutputFormat::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use constant {
     XML   => 'xml',
@@ -213,7 +208,7 @@ MRS::Client - Used constants in the MRS::Client's modules
 
 =head1 VERSION
 
-version 0.600100
+version 1.0.0
 
 =head1 NAME
 
@@ -231,7 +226,7 @@ Martin Senger <martin.senger@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+This software is copyright (c) 2013 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

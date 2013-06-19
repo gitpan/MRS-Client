@@ -11,14 +11,7 @@ use ExtUtils::MakeMaker 6.30;
 my %WriteMakefileArgs = (
   "ABSTRACT" => "A SOAP-based client of the MRS Retrieval server",
   "AUTHOR" => "Martin Senger <martin.senger\@gmail.com>",
-  "BUILD_REQUIRES" => {
-    "English" => 0,
-    "File::Find" => 0,
-    "File::Spec" => 0,
-    "File::Temp" => 0,
-    "Test::More" => 0,
-    "Test::Requires" => 0
-  },
+  "BUILD_REQUIRES" => {},
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.30"
   },
@@ -32,6 +25,7 @@ my %WriteMakefileArgs = (
   "NAME" => "MRS::Client",
   "PREREQ_PM" => {
     "Carp" => 0,
+    "Data::Dumper" => 0,
     "File::Basename" => 0,
     "FindBin" => 0,
     "Getopt::Std" => 0,
@@ -46,12 +40,31 @@ my %WriteMakefileArgs = (
     "vars" => 0,
     "warnings" => 0
   },
-  "VERSION" => "0.600100",
+  "TEST_REQUIRES" => {
+    "File::Find" => 0,
+    "File::Spec" => 0,
+    "File::Temp" => 0,
+    "Test::More" => 0
+  },
+  "VERSION" => "1.0.0",
   "test" => {
     "TESTS" => "t/*.t"
   }
 );
 
+
+unless ( eval { ExtUtils::MakeMaker->VERSION(6.63_03) } ) {
+  my $tr = delete $WriteMakefileArgs{TEST_REQUIRES};
+  my $br = $WriteMakefileArgs{BUILD_REQUIRES};
+  for my $mod ( keys %$tr ) {
+    if ( exists $br->{$mod} ) {
+      $br->{$mod} = $tr->{$mod} if $tr->{$mod} > $br->{$mod};
+    }
+    else {
+      $br->{$mod} = $tr->{$mod};
+    }
+  }
+}
 
 unless ( eval { ExtUtils::MakeMaker->VERSION(6.56) } ) {
   my $br = delete $WriteMakefileArgs{BUILD_REQUIRES};

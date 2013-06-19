@@ -9,9 +9,8 @@
 use warnings;
 use strict;
 package MRS::Client::Blast;
-{
-  $MRS::Client::Blast::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use Carp;
 use MRS::Constants;
@@ -91,9 +90,8 @@ sub remove_job {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Blast::Job;
-{
-  $MRS::Client::Blast::Job::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use Carp;
 
@@ -227,15 +225,17 @@ sub _run {
     };
 
     $self->{client}->_create_proxy ('blast');
+    my $args = {
+        query           => $self->fasta,
+        program         => $self->program,
+        db              => $self->db,
+        reportLimit     => ($self->max_hits),
+        params          => $params,
+    };
+    $args->{mrsBooleanQuery} = ($self->{query} ? $self->query : '')
+        unless $self->{client}->is_v6;
     my $answer = $self->{client}->_call (
-        $self->{client}->{blast_proxy}, 'Blast',
-        { query           => $self->fasta,
-          program         => $self->program,
-          db              => $self->db,
-          mrsBooleanQuery => ($self->query ? $self->query : ''),
-          reportLimit     => ($self->max_hits),
-          params          => $params,
-        });
+        $self->{client}->{blast_proxy}, 'Blast', $args);
 
     $self->{id} =  $answer->{parameters}->{jobId};
     $self->{status} = MRS::JobStatus->UNKNOWN;
@@ -332,9 +332,8 @@ sub results {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Blast::Result;
-{
-  $MRS::Client::Blast::Result::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use File::Basename;
 
@@ -345,6 +344,12 @@ sub _new {
     my $self = bless {}, ref ($class) || $class;
 
     $self->{job}  = $job;
+    $self->{format}    = $data->{format};
+
+    # in MRS 6, the result itself is hidden deeper in $data
+    if (exists $data->{result}) {
+        $data = $data->{result};
+    }
 
     $self->{db_count}  = $data->{dbCount};
     $self->{db_length} = $data->{dbLength};
@@ -352,7 +357,6 @@ sub _new {
     $self->{kappa}     = $data->{kappa};
     $self->{lambda}    = $data->{lambda};
     $self->{entropy}   = $data->{entropy};
-    $self->{format}    = $data->{format};
 
     $self->{hits} = [];  # MRS::Client::Blast::Hit
     if ($data->{hits}) {
@@ -505,9 +509,8 @@ sub convert2xml {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Blast::Hit;
-{
-  $MRS::Client::Blast::Hit::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 sub _new {
     # $data is a hashref (from $answer->{parameters}->{hits})
@@ -573,9 +576,8 @@ sub as_string {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Blast::HSP;
-{
-  $MRS::Client::Blast::HSP::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 sub _new {
     my ($class, $data) = @_;  # $data is a hashref (from $answer->{parameters}->{hits})
@@ -644,7 +646,7 @@ MRS::Client - Blast invocation and results
 
 =head1 VERSION
 
-version 0.600100
+version 1.0.0
 
 =head1 NAME
 
@@ -662,7 +664,7 @@ Martin Senger <martin.senger@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+This software is copyright (c) 2013 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

@@ -10,9 +10,8 @@ use strict;
 use warnings;
 
 package MRS::Client;
-{
-  $MRS::Client::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use vars qw( $AUTOLOAD );
 use Carp;
@@ -20,6 +19,7 @@ use XML::Compile::SOAP11 2.26;
 use XML::Compile::WSDL11;
 use XML::Compile::Transport::SOAPHTTP;
 use File::Basename;
+use Data::Dumper;
 
 use MRS::Constants;
 use MRS::Client::Databank;
@@ -32,14 +32,18 @@ use MRS::Client::Clustal;
 #  Expoted constants
 #
 #-----------------------------------------------------------------
-use constant DEFAULT_SEARCH_ENDPOINT  => 'http://mrs.cmbi.ru.nl/mrsws/search';
-use constant DEFAULT_BLAST_ENDPOINT   => 'http://mrs.cmbi.ru.nl/mrsws/blast';
-use constant DEFAULT_CLUSTAL_ENDPOINT => 'http://mrs.cmbi.ru.nl/mrsws/clustal';
-use constant DEFAULT_ADMIN_ENDPOINT   => 'http://mrs.cmbi.ru.nl/mrsws/admin';
+use constant DEFAULT_SEARCH_ENDPOINT  => 'http://mrs.cmbi.ru.nl/m6/mrsws/search';
+use constant DEFAULT_BLAST_ENDPOINT   => 'http://mrs.cmbi.ru.nl/m6/mrsws/blast';
+use constant DEFAULT_CLUSTAL_ENDPOINT => 'http://mrs.cmbi.ru.nl/m6/mrsws/clustal';
+use constant DEFAULT_ADMIN_ENDPOINT   => 'http://mrs.cmbi.ru.nl/m6/mrsws/admin';
 use constant DEFAULT_SEARCH_WSDL      => 'search.wsdl.template';
 use constant DEFAULT_BLAST_WSDL       => 'blast.wsdl.template';
 use constant DEFAULT_CLUSTAL_WSDL     => 'clustal.wsdl.template';
 use constant DEFAULT_ADMIN_WSDL       => 'admin.wsdl.template';
+use constant DEFAULT_SEARCH_WSDL_6    => 'search.wsdl.template.v6';
+use constant DEFAULT_BLAST_WSDL_6     => 'blast.wsdl.template.v6';
+use constant DEFAULT_CLUSTAL_WSDL_6   => 'clustal.wsdl.template';   # no ClustalW in MRS 6
+use constant DEFAULT_ADMIN_WSDL_6     => 'admin.wsdl.template';     # no Admin in MRS 6
 use constant DEFAULT_SEARCH_SERVICE   => 'mrsws_search';
 use constant DEFAULT_BLAST_SERVICE    => 'mrsws_blast';
 use constant DEFAULT_CLUSTAL_SERVICE  => 'mrsws_clustal';
@@ -68,6 +72,8 @@ use constant DEFAULT_ADMIN_SERVICE    => 'mrsws_admin';
          admin_wsdl       => 1,
 
          host             => 1,
+         mrs_version      => 1,
+         debug            => 1,
          );
 
     sub _accessible {
@@ -145,8 +151,20 @@ sub new {
     }
     $self->host ($ENV{'MRS_HOST'}) if $ENV{'MRS_HOST'};
 
+    # set MRS version
+    $self->{mrs_version} = $ENV{'MRS_VERSION'} if $ENV{'MRS_VERSION'};
+    $self->{mrs_version} = 6 unless $self->{mrs_version};
+
     # done
     return $self;
+}
+
+#-----------------------------------------------------------------
+#
+#-----------------------------------------------------------------
+sub is_v6 {
+    my $self = shift;
+    return (defined $self->{mrs_version} and $self->{mrs_version} eq '6');
 }
 
 #-----------------------------------------------------------------
@@ -176,6 +194,7 @@ sub host {
          ($current and $self->admin_url eq "http://$current:18084/") ) {
         $self->admin_url  ("http://$host:18084/");
     }
+
     $self->{host} = $host;
 }
 
@@ -198,7 +217,7 @@ sub _create_proxy {
     if (not defined $self->{$ptype . '_proxy'}) {
         my $wsdl;
         if (not defined $self->{$ptype . '_wsdl'}) {
-            $wsdl = _readfile ( (fileparse (__FILE__))[-2] . _default_wsdl ($ptype) );
+            $wsdl = _readfile ( (fileparse (__FILE__))[-2] . $self->_default_wsdl ($ptype) );
             $wsdl =~ s/\${LOCATION}/$self->{$ptype . '_url'}/eg;
             $wsdl =~ s/\${SERVICE}/$self->{$ptype . '_service'}/eg;
         } else {
@@ -209,11 +228,19 @@ sub _create_proxy {
 }
 
 sub _default_wsdl {
-    my $ptype = shift;
-    return DEFAULT_SEARCH_WSDL  if $ptype eq 'search';
-    return DEFAULT_BLAST_WSDL   if $ptype eq 'blast';
-    return DEFAULT_CLUSTAL_WSDL if $ptype eq 'clustal';
-    return DEFAULT_ADMIN_WSDL   if $ptype eq 'admin';
+    my ($self, $ptype) = @_;
+
+    if ($self->is_v6) {
+        return DEFAULT_SEARCH_WSDL_6  if $ptype eq 'search';
+        return DEFAULT_BLAST_WSDL_6   if $ptype eq 'blast';
+        return DEFAULT_CLUSTAL_WSDL_6 if $ptype eq 'clustal';
+        return DEFAULT_ADMIN_WSDL_6   if $ptype eq 'admin';
+    } else {
+        return DEFAULT_SEARCH_WSDL  if $ptype eq 'search';
+        return DEFAULT_BLAST_WSDL   if $ptype eq 'blast';
+        return DEFAULT_CLUSTAL_WSDL if $ptype eq 'clustal';
+        return DEFAULT_ADMIN_WSDL   if $ptype eq 'admin';
+    }
     die "Uknown proxy type '" . $ptype . "'\n";
 }
 
@@ -248,6 +275,12 @@ sub _call {
     # make a SOAP call
     my ($answer, $trace) = $call->( %$parameters );
 
+    if ($self->{debug}) {
+        print "OPERATION: $operation, PARAMS:\n".Dumper ($parameters);
+        print "RESPONSE:\n".Dumper ($answer);
+        print $trace->printResponse unless defined $answer;
+    }
+    # print "CALL TRA:\n".Dumper ($trace);
     # $trace->printTimings;
     # $trace->printRequest;
     # $trace->printResponse;
@@ -260,7 +293,7 @@ sub _call {
 
 #-----------------------------------------------------------------
 # Factory method for creating one or more databanks:
-#   it returns an array of MRS::Client::Databank if $db is undef or empty
+#   it returns an array of MRS::Client::Databank if $db is undef or empty or 'all'
 #   else it returns a databank indicated by $db (which is an Id)
 #-----------------------------------------------------------------
 sub db {
@@ -275,7 +308,7 @@ sub db {
     my @dbs = ();
     return @dbs unless defined $answer;
     foreach my $info (@{ $answer->{parameters}->{info} }) {
-        push (@dbs, MRS::Client::Databank->new (%$info, client => $self));
+        push (@dbs, MRS::Client::Databank->new (%$info, client => $self, info_retrieved => 1));
     }
     return @dbs;
 }
@@ -286,8 +319,8 @@ sub db {
 sub find {
     my $self = shift;
 
-    my $multi = MRS::Client::MultiFind->new (@_);
-    $multi->{client} = $self;
+    my $multi = MRS::Client::MultiFind->new ($self, @_);
+    # $multi->{client} = $self;
 
     # create individual finds for each available databank
     $multi->{args} = \@_;   # will be needed for cloning
@@ -318,12 +351,15 @@ sub blast {
 # -----------------------------------------------------------------
 sub clustal {
     my $self = shift;
+    croak "ClustalW service is not available in MRS server version 6 and above.\n"
+        if $self->is_v6;
     return MRS::Client::Clustal->_new (client => $self);
 }
 
 #-----------------------------------------------------------------
 #
-# Admin calls ... work in progress, and not really supported
+# Admin calls ... work in progress, and not really supported, AND it
+# disappeared completely in MRS 6
 #
 #-----------------------------------------------------------------
 
@@ -355,20 +391,20 @@ MRS::Client - A SOAP-based client of the MRS Retrieval server
 
 =head1 VERSION
 
-version 0.600100
+version 1.0.0
 
 =head1 SYNOPSIS
 
     # 1. create a client that does all the work:
     use MRS::Client;
 
-    # ...by default it connects to the MRS service at http://mrs.cmbi.ru.nl
+    # ...by default it connects to the MRS service at http://mrs.cmbi.ru.nl/m6
     my $client = MRS::Client->new();
 
     # ...or let the client talk to your own MRS servers
     my $client = MRS::Client->new ( search_url  => 'http://localhost:18081/',
                                     blast_url   => 'http://localhost:18082/',;
-                                    clustal_url => 'http://localhost:18083/');
+                                    clustal_url => 'http://localhost:18083/');  # this only for MRS 5
 
     # ...or specify only a host, assuming the default ports are used
     my $client = MRS::Client->new ( host => 'localhost');
@@ -389,16 +425,16 @@ version 0.600100
     ...
 
     # show id, relevance score and title of two terms connected by AND
-    my $query = $client->db ('enzyme')->find (and => ['snake', 'human'],
-					      'format' => MRS::EntryFormat->HEADER);
+    my $query = $client->db ('enzyme')->find ('and' => ['snake', 'human'],
+                                              'format' => MRS::EntryFormat->HEADER);
     while (my $record = $query->next) {
        print $record . "\n";
     }
     enzyme  3.4.21.95   17.6527424   Snake venom factor V activator.
 
     # ...show only title, but now the same two terms are connected by OR
-    my $query = $client->db ('enzyme')->find (or => ['snake', 'human'],
-					      'format' => MRS::EntryFormat->TITLE);
+    my $query = $client->db ('enzyme')->find ('or' => ['snake', 'human'],
+                                              'format' => MRS::EntryFormat->TITLE);
     while (my $record = $query->next) {
        print $record . "\n";
     }
@@ -409,7 +445,7 @@ version 0.600100
     ...
 
     # combine term-based (ranked) query with additional boolean expression
-    my $query = $client->db ('uniprot')->find (and => ['snake', 'human'],
+    my $query = $client->db ('uniprot')->find ('and' => ['snake', 'human'],
                                                query => 'NOT (kinase OR reductase)',
                                                'format' => MRS::EntryFormat->HEADER);
     print "Count: " . $query->count . "\n";
@@ -432,10 +468,10 @@ version 0.600100
     # 3. Or, almost all functionality is also available in a provided
     # script I<mrsclient>:
 
-    [scripts/]mrsclient -h
-    [scripts/]mrsclient -C
-    [scripts/]mrsclient -c -n insulin
-    [scripts/]mrsclient -c -p -d enzyme -a 'endothelin tyrosine'
+    mrsclient -h
+    mrsclient -C
+    mrsclient -c -n insulin
+    mrsclient -c -p -d enzyme -a 'endothelin tyrosine'
 
     # 4. Run blastp on protein sequences:
 
@@ -452,10 +488,11 @@ version 0.600100
 
     # Or, use for it the provide script I<mrsblast>:
 
-    [scripts/]mrsblast -h
-    [scripts/]mrsblst -i /tmp/snake.protein.fasta -d uniprot -x result.xml
+    mrsblast -h
+    mrsblast -i /tmp/snake.protein.fasta -d uniprot -x result.xml
 
     # 5. Run clustalw multiple alignment:
+    # (available only for MRS version 5 and lower)
 
     my $result = $client->clustal->run (fasta_file => 'multiple.fasta' );
     print "ERROR: " . $result->failed if $result->failed;
@@ -464,8 +501,8 @@ version 0.600100
 
     # Or, use for it the provide script I<mrsclustal>:
 
-    [scripts/]mrsclustal -h
-    [scripts/]mrsclustal -i multiple.fasta
+    mrsclustal -h
+    mrsclustal -i multiple.fasta
 
 =head1 DESCRIPTION
 
@@ -479,7 +516,7 @@ Because this module is only a client, you need an MRS server
 running. You can install your own (see details in the MRS
 distribution), or you need to know a site that runs it. By default,
 this module contacts the MRS server at CMBI
-(F<http://mrs.cmbi.ru.nl/>).
+(F<http://mrs.cmbi.ru.nl/m6/>).
 
 The usual scenario is the following:
 
@@ -526,6 +563,14 @@ I<clustalw>.
 
 =back
 
+=head1 ATTENTION
+
+I<For those updating from previous versions of> C<MRS::Client>: Because
+the latest version of MRS server (version 6) is not backward
+compatible with the previous version of the MRS server (version 5),
+there are some significant (but fortunately not huge) changes needed
+in your programs. Read details in L</"MRS VERSIONS">.
+
 =head1 METHODS
 
 =head2 MRS::Client
@@ -556,7 +601,7 @@ for a shortcut):
 
     my $client = MRS::Client->new ( search_url  => 'http://localhost:18081/',
                                     blast_url   => 'http://localhost:18082/',
-                                    clustal_url => 'http://localhost:18083/',
+                                    clustal_url => 'http://localhost:18083/',   # this only for MRS 5
                                    );
 
 Technical detail: These URLs will be used in the location field of the
@@ -616,28 +661,24 @@ accepts a single argument, a databank ID:
    print $client->db ('enzyme');
 
    Id:      enzyme
-   Version: Tue Jun 13 21:29:00 2006
-   Count:   4645
+   Name:    Enzyme
+   Version: 2013-05-27
+   Count:   6115
    URL:     http://ca.expasy.org/enzyme/
    Parser:  enzyme
    Files:
-           Version:       Tue Jun 13 21:29:00 2006
-           Modified:      2010-01-31 22:39:37
-           Entries count: 4645
-           Raw data size: 3235666
-           File size:     10857715
-           Unique Id:     fe2a908e-5ecd-4f72-9d27-e1ef7bccc3af
+           Version:       2013-05-27
+           Modified:      2013-05-27 11:46 GMT
+           Entries count: 6115
+           Raw data size: 7436504
+           File size:     45563041
+           Unique Id:     fc0540bd-58a2-4de7-b3ff-6daff64ca13c
    Indices:
-           __ALL_TEXT__   164412  FullText  __ALL_TEXT__
-           an               4534  FullText  Alternate Name
-           ca               4594  FullText  Catalytic Activity
-           cc               8184  FullText  Comments
-           cf                 66  FullText  CoFactor
-           de               3341  FullText  Description
-           di                574  FullText  Disease
-           dr             145912  FullText  Database Reference
-           id               4645  Unique    Identification
-           pr                418  FullText  Prosite Reference
+           enzyme         text               14881  Unique
+           enzyme         de                  3650  Unique    Description
+           enzyme         dr                420832  Unique    Database Reference
+           enzyme         id                  6114  Unique    Identification
+           enzyme         pr                   398  Unique    Prosite Reference
 
 You can find out what databanks IDs are available by:
 
@@ -653,7 +694,7 @@ Make the same query to all databanks. The parameters are the same as
 for the I<find> method called for an individual databank (see below).
 
    print "Databank\tID\tScore\tTitle\n";
-   my $query = $client->find (and => ['cone', 'snail'],
+   my $query = $client->find ('and' => ['cone', 'snail'],
                               'format' => MRS::EntryFormat->HEADER);
    while (my
       $record = $query->next) {
@@ -681,7 +722,7 @@ after another. As with individual databanks, even here you can select
 maximum number of entries to deliver - the number is applied for each
 databank separately:
 
-   my $query = $client->find (and => ['cone', 'snail'],
+   my $query = $client->find ('and' => ['cone', 'snail'],
                               max_entries => 2,
                               'format' => MRS::EntryFormat->HEADER);
    while (my
@@ -727,8 +768,8 @@ is created by a factory method available in the C<MRS::Client>:
 The factory method, as well as the I<new> method, creates only a
 "shell" databank instance - that is good enough for making queries but
 which does not contain any databank properties (name, indices,
-etc.). The properties will be fetched from the MRS server only when
-you ask for them (using the "getters" method described below).
+etc.) yet. The properties will be fetched from the MRS server only when
+you ask for them (using the "getter" methods described below).
 
 =head3 new
 
@@ -739,6 +780,9 @@ The only, and mandatory, parameter is I<id>:
 The arguments syntax (the hash) is prepared for more arguments later
 (perhaps). But it should not bother you because you would rarely use
 this method - having the factory method I<db> in the client.
+
+I<Recommendation:> Do not use this method directly, or check first how
+it is used in the module C<MRS::Client>.
 
 =head3 find
 
@@ -761,7 +805,7 @@ hash:
 The value is an array reference where elements are terms that will be
 combined by the AND boolean operator in a ranked query. For example:
 
-   $find = $db->find (and => ['human', 'snake']);
+   $find = $db->find ('and' => ['human', 'snake']);
 
 This argument can also be used directly, not as a hash, assuming that
 you do not need to use any other arguments:
@@ -773,7 +817,7 @@ you do not need to use any other arguments:
 The value is an array reference where elements are terms that will be
 combined by the OR boolean operator in a ranked query. For example:
 
-   $find = $db->find (or => ['human', 'snake']);
+   $find = $db->find ('or' => ['human', 'snake']);
 
 There can be either an I<and> or an I<or> argument, but not both. If
 there are used both, a warning is issued and the I<and> one will take
@@ -790,13 +834,13 @@ If there are no boolean operators, it is used as a single term. For
 example, these are equivalent:
 
    $find = $db->find (query => 'hemoglobinase activity');
-   $find = $db->find (and => ['hemoglobinase activity']);
+   $find = $db->find ('and' => ['hemoglobinase activity']);
 
 You can also use both, I<and> or I<or>, and I<query>. The query then
 is an additional filter applied to the results found by the I<and> or
 I<or> terms. For example:
 
-   $find = $db->find (and => ['human', 'snake'],
+   $find = $db->find ('and' => ['human', 'snake'],
                       query => 'NOT neurotoxin');
 
 As a shortcut, the query parameter can also be used without a hash,
@@ -805,6 +849,9 @@ assuming again that you do not need to use any other arguments:
    $find = $db->find ('hemoglobinase AND NOT human');
 
 =item C<algorithm>
+
+B<Attention:> This argument is used only by MRS version 5,
+See L<MRS VERSIONS> for details.
 
 The ranked queries (the ones achieved by I<and> or I<or> arguments)
 have assigned relevance score to their hits. The relevance score
@@ -821,7 +868,7 @@ are defined in C<MRS::Algorithm>:
 The default algorithm is "Vector". For example (using the format
 "header" - which is the only one that shows relevance scores):
 
-   $client->$db('enzyme')->find (and => 'venom',
+   $client->$db('enzyme')->find ('and' => 'venom',
                                  algorithm => MRS::Algorithm->Dice,
                                  max_entries => 3,
                                  'format' => MRS::EntryFormat->HEADER);
@@ -829,7 +876,7 @@ The default algorithm is "Vector". For example (using the format
    enzyme  3.4.24.49    13.6817474      Bothropasin.
    enzyme  3.4.24.73    13.2007284      Jararhagin.
 
-   $client->$db('enzyme')->find (and => 'venom',
+   $client->$db('enzyme')->find ('and' => 'venom',
                                  algorithm => MRS::Algorithm->Vector,
                                  max_entries => 3,
                                  'format' => MRS::EntryFormat->HEADER);
@@ -884,7 +931,8 @@ quotes; just a minor annoyance).
 
 This argument (C<eXtended format>) enhances the C<format> argument. It
 is used (at least at the moment) only for HTML format; for other
-formats, it is ignored.
+formats, it is ignored. See, however, the L</"MRS VERSIONS"> about the
+abandoned HTML format.
 
 Be aware, however, that the C<xformat> depends on the structure of the
 HTML provided by the MRS. This structure is not defined in the MRS
@@ -898,8 +946,8 @@ significantly) the returned HTML. Here are all possible keys
 
    xformat => { MRS::XFormat::CSS_CLASS()   => 'mrslink',
                 MRS::XFormat::URL_PREFIX()  => 'http://cbrcgit:8080/mrs-web/'
-                MRS::XFormat::REMOVE_DEAD() => 1, # or => ['...']
-		MRS::XFormat::ONLY_LINKS()  => 1 }
+                MRS::XFormat::REMOVE_DEAD() => 1, # 'or' => ['...']
+                MRS::XFormat::ONLY_LINKS()  => 1 }
 
 C<MRS::XFormat::CSS_CLASS> specifies a CSS-class name that will be
 added to all C<a> tags in the returned HTML. It allows, for example,
@@ -976,8 +1024,8 @@ hyperlinks:
         (and      => ['DNP_DENAN'],
          'format' => MRS::EntryFormat->HTML,
          xformat  => {
-  	     MRS::XFormat::ONLY_LINKS()  => 1,
-	     MRS::XFormat::CSS_CLASS()   => 'mrslink',
+             MRS::XFormat::ONLY_LINKS()  => 1,
+             MRS::XFormat::CSS_CLASS()   => 'mrslink',
          },
     );
     while (my $record = $find->next) {
@@ -1036,7 +1084,7 @@ extended format, and it returns the given entry:
 The optional C<extended format> is a hashref and it was explained
 earlier in the section about the C<find()> method.
 
-=head3 id, name, version, blastable, url, script, files, indices
+=head3 id, name, version, blastable, url, script, files, indices, aliases
 
 There are several methods delivering databank properties. They have no
 arguments:
@@ -1048,6 +1096,7 @@ arguments:
    print $db->blastable . "\n";
    print $db->url       . "\n";
    print $db->script    . "\n";
+   print $db->aliases   . "\n";
 
 =head3 files
 
@@ -1078,8 +1127,9 @@ instances. Each such instance has properties reachable by the
 
    my $db_indices = $client->db('uniprot')->indices;
    foreach my $idx (@{ $db_indices }) {
-      printf ("%-15s%9d  %-9s %s\n",
-	      $idx->id,
+      printf ("%-15s%-15s%9d  %-9s %s\n",
+              $idx->db,
+              $idx->id,
               $idx->count,
               $idx->type,
               $idx->description);
@@ -1511,6 +1561,9 @@ Finally, this gives a long listing with all details:
 
 =head2 MRS::Client::Clustal
 
+B<Attention:> This module is used only by MRS version 5,
+See L<MRS VERSIONS> for details.
+
 The module wrapping the multiple alignment program I<clustalw>. The
 program is optional and, therefore, not all MRS servers may have
 it. Use the factory method for creating instances of
@@ -1608,6 +1661,73 @@ It shows the standard output of the underlying F<clustalw> program:
 It returns standard error output of the underlying F<clustalw>
 program. It the program finished without problems, it returns undef.
 
+=head1 MRS VERSIONS
+
+The SOAP API of the MRS server slightly (or significantly, depending
+on what you were using) changed between version 5 and 6 (the version
+numbers indicate the MRS server version, not the version of the
+C<MRS::Client> module). The C<MRS::Client> module can work with both
+MRS server versions, but sometimes you have to tell what version you
+are planning to connect to.
+
+=head3 new parameter C<mrs_version>
+
+By default, the C<MRS::Client> assumes that it connects to an MRS
+server version 6 (or higher). But for MRS servers version 5 you need
+to add a new argument B<mrs_version> to the client instance
+constructor with a value that differs from 6 (and it not zero or
+undef):
+
+   my $client = MRS::Client->new (mrs_version => 5, host => '...');
+
+You can also set the expected version by an environment variable
+C<MRS_VERSION>:
+
+   $ENV{MRS_VERSION} = 5;
+   my $client = MRS::Client->new (host => '...');
+
+You can also check what version your client is talking to, by a new
+method B<is_v6> (mostly used rather internally):
+
+   $client->is_v6()   # returns 1 or 0
+
+The command-line tool C<mrsclient> got an additional parameter B<-V>:
+
+   mrsclient -V5 -H... -l
+
+=head3 missing some result formats
+
+The MRS 6 server does not support anymore B<HTML> and B<sequence>
+result formats. The C<sequence> format does not matter much because
+the C<fasta> format continues to be provided and it is easy to get the
+pure sequence from it. But the lack of the C<HTML> format is probably
+the most significant (downgrade) change.
+
+=head3 search algorithm not supported
+
+The MRS 6 server does not accept anymore requests for different search
+algorithms; it uses always the B<Vector> algorithm.
+
+=head3 no ClustalW service
+
+The MRS 6 server does not provide multiple sequence alignment
+service. All remarks about ClustalW in this document are, therefore,
+valid only for the MRS 5.
+
+=head3 aliases
+
+The MRS 6 brings a new concept: I<aliases>. An alias is a set of
+databases, usually closely related. A typical example is an alias
+C<uniprot> that combines together two databases, the C<sprot>
+(SwissProt) and C<trembl> (TrEMBL). You can use an alias in all places
+where so far only database IDs were possible.
+
+However, the list of databases returned by the "db()" method does not
+include the aliases. You need to ask individual databases for their
+aliases:
+
+   $client->db('sprot')->aliases();
+
 =head1 MISSING FEATURES, CAVEATS, BUGS
 
 =over
@@ -1632,7 +1752,7 @@ example, in I<mrsweb> if you type (using the F<uniprot>):
 you get 134 entries. You get the same number of hits by the
 C<MRS::Client> module when using an I<and> argument:
 
-   print $client->db('uniprot')->find (and => ['cone','snail'])->count;
+   print $client->db('uniprot')->find ('and' => ['cone','snail'])->count;
    134
 
 But you cannot just pass the whole expression as a query string (as
@@ -1698,50 +1818,15 @@ The C<MRS::Client> module uses the following modules:
    FindBin
    Getopt::Std
 
-=head1 AUTHORS
-
-Martin Senger E<lt>martin.senger@gmail.comE<gt>
-
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-mrs-client at
-rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=MRS-Client>.  I will
-be notified, and then you'll automatically be notified of progress on
-your bug as I make changes.
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc MRS::Client
-
-You can also look for information at:
-
-=over 4
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=MRS-Client>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/MRS-Client>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/MRS-Client>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/MRS-Client>
-
-=back
+Please report any bugs or feature requests to
+L<http://github.com/msenger/MRS-Client/issues>.
 
 =head1 ACKNOWLEDGMENTS
 
 This client module would be useless without having an MRS server
-(e.g. at F<http://mrs.cmbi.ru.nl/mrs-web/>). The MRS stands for
+(e.g. at F<http://mrs.cmbi.ru.nl/m6/>). The MRS stands for
 B<Maarten's Retrieval System> and was developed (and is maintained) by
 I<Maarten Hekkelman> at the CMBI (F<http://www.cmbi.ru.nl/>), with the
 help and contributions from many others.
@@ -1759,7 +1844,7 @@ more documented package.
 
 The MRS server provides Blast results that are not in XML. In order to
 make an XML output, this module uses, hopefully, the same format and
-conversion as found in the MRS web application I<mrsweb>.
+conversion as found in the MRS web application.
 
 =head1 AUTHOR
 
@@ -1767,7 +1852,7 @@ Martin Senger <martin.senger@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+This software is copyright (c) 2013 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

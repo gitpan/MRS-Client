@@ -9,34 +9,38 @@
 use warnings;
 use strict;
 package MRS::Client::Find;
-{
-  $MRS::Client::Find::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use Carp;
 use Math::BigInt;
+use Data::Dumper;
 
-# find (string)
-# find ([string]) ... ref ARRAY
-# find (args)     ... HASH or ref HASH
+#-----------------------------------------------------------------
+# new (client, string)
+# new (client, [string]) ... ref ARRAY
+# new (client, args)     ... HASH or ref HASH
+#-----------------------------------------------------------------
 sub new {
     my $class = shift;
     my $self = bless {}, ref ($class) || $class;
+    $self->{client} = shift;
 
     # parse the arguments and fill them into $self
     croak "Empty query request. Cannot do anything.\n" unless @_ > 0;
     if (@_ == 1) {
         my $arg = shift;
         if (ref ($arg) eq 'ARRAY') {
-            push (@_, and => $arg);
+            push (@_, 'and' => $arg);
         } elsif (ref ($arg) eq 'HASH') {
             push (@_, %$arg);
         } elsif (MRS::Operator->contains ($arg)) {
             push (@_, query => $arg);
         } else {
-            push (@_, and => [$arg]);
+            push (@_, 'and' => [$arg]);
         }
     }
+
     my (%args) = @_;
     foreach my $key (keys %args) {
         $self->{$key} = $args {$key};
@@ -46,12 +50,14 @@ sub new {
     $self->{format} = MRS::EntryFormat->PLAIN unless $self->{format};
     warn ("Unrecognized output format '" . $self->{format} . "'. Reversed to default.\n")
         and $self->{format} = MRS::EntryFormat->PLAIN
-        unless MRS::EntryFormat->check ($self->{format});
+        unless MRS::EntryFormat->check ($self->{format}, $self->{client});
 
-    $self->{algorithm} = MRS::Algorithm->VECTOR unless $self->{algorithm};
-    warn ("Unrecognized scoring algorithm '" . $self->{algorithm} . "'. Reversed to default.\n")
-        and $self->{algorithm} = MRS::Algorithm->VECTOR
-        unless MRS::Algorithm->check ($self->{algorithm});
+    unless ($self->{client} and $self->{client}->is_v6) {
+        $self->{algorithm} = MRS::Algorithm->VECTOR unless $self->{algorithm};
+        warn ("Unrecognized scoring algorithm '" . $self->{algorithm} . "'. Reversed to default.\n")
+            and $self->{algorithm} = MRS::Algorithm->VECTOR
+            unless MRS::Algorithm->check ($self->{algorithm});
+    }
 
     $self->{offset} = 0 unless defined $self->{offset};
     warn ("Parameter 'offset' is not an integer. Reversed to zero.\n")
@@ -143,28 +149,44 @@ sub _read_next_hits {
     $self->{client}->_create_proxy ('search');
 
     # using ranked query, possibly combined with a boolean query
+    my $params = {
+        db               => $self->{db},
+        queryterms       => $self->{terms},
+        alltermsrequired => $self->{all_terms_required},
+        booleanfilter    => ($self->{query} or ''),
+        resultoffset     => $self->{offset},
+        maxresultcount   => 200,
+    };
+    $params->{algorithm} = $self->{algorithm} unless $self->{client}->is_v6;
+
     my $answer = $self->{client}->_call (
-        $self->{client}->{search_proxy}, 'Find',
-        { db               => $self->{db},
-          queryterms       => $self->{terms},
-          algorithm        => $self->{algorithm},
-          alltermsrequired => $self->{all_terms_required},
-          booleanfilter    => ($self->{query} or ''),
-          resultoffset     => $self->{offset},
-          maxresultcount   => 200,
-        });
+        $self->{client}->{search_proxy}, 'Find', $params);
 
     if (defined $answer) {
-#       use Data::Dumper;
-#       print Dumper ($answer);
+        use Data::Dumper;
+        # print Dumper ($answer);
+        # $self->{count} = 0;
         my $response = $answer->{parameters}->{response};
-        warn ("Unexpected response length: " . (@$response+0) . "\n")
-            if @$response > 1;   # developer's error
-        $self->{count} = $$response[0]->{count};
-        foreach my $hit (@{ $$response[0]->{hits} }) {
-            push (@{ $self->{hits} }, MRS::Client::Hit->new (%$hit, db => $self->db));
+        if ($response) {
+            foreach my $data (@{ $answer->{parameters}->{response} }) {
+                if ($data->{count} > 0) {
+                    $self->{count} += $data->{count};
+                }
+                # warn ("Unexpected response length: " . (@$response+0) . "\n")
+                #       if @$response > 1;   # developer's error
+
+                # $self->{count} = $$response[0]->{count};
+                # foreach my $hit (@{ $$response[0]->{hits} }) {
+                #     push (@{ $self->{hits} }, MRS::Client::Hit->new (%$hit, db => $self->db));
+                # }
+                # $self->{offset} += @{ $self->{hits} };
+
+                foreach my $hit (@{ $data->{hits} }) {
+                    push (@{ $self->{hits} }, MRS::Client::Hit->new (%$hit, db => $self->{db}));
+                }
+                $self->{offset} += @{ $data->{hits} };
+            }
         }
-        $self->{offset} += @{ $self->{hits} };
     }
 
     # we may be at the end
@@ -234,9 +256,9 @@ sub as_string {
 #
 #-----------------------------------------------------------------
 package MRS::Client::MultiFind;
-{
-  $MRS::Client::MultiFind::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
+
 use Carp;
 use base qw( MRS::Client::Find );
 
@@ -279,16 +301,17 @@ sub _read_first_hits {
     $self->{client}->_create_proxy ('search');
 
     # using ranked query, possibly combined with a boolean query
+    my $params = {
+        db               => 'all',
+        queryterms       => $self->{terms},
+        alltermsrequired => $self->{all_terms_required},
+        booleanfilter    => ($self->{query} or ''),
+        resultoffset     => $self->{offset},
+        maxresultcount   => 5,  # maximum accepted by the MRS server
+    };
+    $params->{algorithm} = $self->{algorithm} unless $self->{client}->is_v6;
     my $answer = $self->{client}->_call (
-        $self->{client}->{search_proxy}, 'Find',
-        { db               => 'all',
-          queryterms       => $self->{terms},
-          algorithm        => $self->{algorithm},
-          alltermsrequired => $self->{all_terms_required},
-          booleanfilter    => ($self->{query} or ''),
-          resultoffset     => $self->{offset},
-          maxresultcount   => 5,  # maximum accepted by the MRS server
-        });
+        $self->{client}->{search_proxy}, 'Find', $params);
 
     my $total_count = Math::BigInt->new;
     my @finds = ();
@@ -298,10 +321,9 @@ sub _read_first_hits {
                 $total_count += $data->{count};
 
                 # create an individual find (by cloning args from me)
-                my $find = MRS::Client::Find->new (@{ $self->{args} });
+                my $find = MRS::Client::Find->new ($self->{client}, @{ $self->{args} });
                 $find->{db} = $data->{db};
                 $find->{dbobj} = $self->{client}->db ($data->{db});
-                $find->{client} = $self->{client};
 
                 # fill them with the hits we already have read
                 $find->{count} = $data->{count};
@@ -351,9 +373,8 @@ sub next {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Hit;
-{
-  $MRS::Client::Hit::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 sub new {
     my ($class, %hit) = @_;
@@ -393,7 +414,7 @@ MRS::Client - Representation of an MRS query - on a client side
 
 =head1 VERSION
 
-version 0.600100
+version 1.0.0
 
 =head1 NAME
 
@@ -411,7 +432,7 @@ Martin Senger <martin.senger@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+This software is copyright (c) 2013 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

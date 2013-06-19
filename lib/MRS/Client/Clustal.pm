@@ -9,9 +9,8 @@
 use warnings;
 use strict;
 package MRS::Client::Clustal;
-{
-  $MRS::Client::Clustal::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 use Carp;
 
@@ -95,7 +94,7 @@ sub run {
           gapOpen   => $self->open_cost,
           gapExtend => $self->extend_cost,
         });
-    return MRS::Client::Clustal::Result->_new ($answer->{parameters});
+    return ($answer ? MRS::Client::Clustal::Result->_new ($answer->{parameters}) : undef);
 }
 
 #-----------------------------------------------------------------
@@ -104,9 +103,8 @@ sub run {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Clustal::Result;
-{
-  $MRS::Client::Clustal::Result::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 sub _new {
     my ($class, $data) = @_;  # $data is a hashref (from $answer->{parameters})
@@ -159,9 +157,8 @@ sub as_string {
 #
 #-----------------------------------------------------------------
 package MRS::Client::Clustal::Sequence;
-{
-  $MRS::Client::Clustal::Sequence::VERSION = '0.600100';
-}
+
+our $VERSION = '1.0.0'; # VERSION
 
 sub _new {
     # $data is a hashref (from $answer->{parameters})
@@ -199,7 +196,7 @@ MRS::Client - Clustal invocation and results
 
 =head1 VERSION
 
-version 0.600100
+version 1.0.0
 
 =head1 NAME
 
@@ -217,7 +214,7 @@ Martin Senger <martin.senger@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2012 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
+This software is copyright (c) 2013 by Martin Senger, CBRC - KAUST (Computational Biology Research Center - King Abdullah University of Science and Technology) All Rights Reserved..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
