@@ -1,3 +1,9 @@
+2013-06-22  Martin Senger  <martin.senger&#64;gmail.com>
+
+	* Released version 1.0.1
+
+	* Fixed mrsclient (an error with older Perls)
+
 2013-06-19  Martin Senger  <martin.senger&#64;gmail.com>
 
 	* Released version 1.0.0

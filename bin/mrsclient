@@ -11,7 +11,7 @@
 use warnings;
 use strict;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
@@ -158,7 +158,7 @@ if (defined $opt_l or defined $opt_y) {
             }
         }
         say join ("\n", sort keys %$all_aliases)
-            if keys $all_aliases;
+            if keys %$all_aliases;
     }
 }
 
@@ -269,7 +269,7 @@ MRS::Client - program accessing MRS Retrieval System
 
 =head1 VERSION
 
-version 1.0.0
+version 1.0.1
 
 =head1 AUTHOR
 

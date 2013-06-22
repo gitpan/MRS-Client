@@ -10,7 +10,7 @@ use warnings;
 use strict;
 package MRS::Client::Find;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use Carp;
 use Math::BigInt;
@@ -257,7 +257,7 @@ sub as_string {
 #-----------------------------------------------------------------
 package MRS::Client::MultiFind;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use Carp;
 use base qw( MRS::Client::Find );
@@ -374,7 +374,7 @@ sub next {
 #-----------------------------------------------------------------
 package MRS::Client::Hit;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 sub new {
     my ($class, %hit) = @_;
@@ -414,7 +414,7 @@ MRS::Client - Representation of an MRS query - on a client side
 
 =head1 VERSION
 
-version 1.0.0
+version 1.0.1
 
 =head1 NAME
 

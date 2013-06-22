@@ -10,7 +10,7 @@ use strict;
 use warnings;
 package MRS::Constants;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 #-----------------------------------------------------------------
 #
@@ -19,7 +19,7 @@ our $VERSION = '1.0.0'; # VERSION
 #-----------------------------------------------------------------
 package MRS::EntryFormat;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use constant {
     PLAIN    => 'plain',
@@ -53,7 +53,7 @@ sub check {
 #-----------------------------------------------------------------
 package MRS::XFormat;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use constant {
     CSS_CLASS   => 'css_class',
@@ -81,7 +81,7 @@ sub check {
 #-----------------------------------------------------------------
 package MRS::Algorithm;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use constant {
     VECTOR   => 'Vector',
@@ -107,7 +107,7 @@ sub check {
 #-----------------------------------------------------------------
 package MRS::Operator;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use constant {
     CONTAINS       => ':',
@@ -149,7 +149,7 @@ sub contains {
 #-----------------------------------------------------------------
 package MRS::JobStatus;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use constant {
     UNKNOWN  => 'unknown',
@@ -177,7 +177,7 @@ sub check {
 #-----------------------------------------------------------------
 package MRS::BlastOutputFormat;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use constant {
     XML   => 'xml',
@@ -208,7 +208,7 @@ MRS::Client - Used constants in the MRS::Client's modules
 
 =head1 VERSION
 
-version 1.0.0
+version 1.0.1
 
 =head1 NAME
 

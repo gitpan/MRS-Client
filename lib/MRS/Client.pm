@@ -11,7 +11,7 @@ use warnings;
 
 package MRS::Client;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use vars qw( $AUTOLOAD );
 use Carp;
@@ -391,7 +391,7 @@ MRS::Client - A SOAP-based client of the MRS Retrieval server
 
 =head1 VERSION
 
-version 1.0.0
+version 1.0.1
 
 =head1 SYNOPSIS
 

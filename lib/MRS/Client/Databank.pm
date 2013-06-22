@@ -10,7 +10,7 @@ use warnings;
 use strict;
 package MRS::Client::Databank;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use Carp;
 use MRS::Constants;
@@ -342,7 +342,7 @@ sub _change_link {
 #-----------------------------------------------------------------
 package MRS::Client::Databank::File;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 sub new {
     my ($class, %file) = @_;
@@ -383,7 +383,7 @@ sub as_string {
 #-----------------------------------------------------------------
 package MRS::Client::Databank::Index;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 sub new {
     my ($class, %args) = @_;
@@ -423,7 +423,7 @@ MRS::Client - Representation of a MRS databank - on a client side
 
 =head1 VERSION
 
-version 1.0.0
+version 1.0.1
 
 =head1 NAME
 

@@ -36,7 +36,7 @@ requires:
 resources:
   bugtracker: http://github.com/msenger/MRS-Client/issues
   homepage: http://search.cpan.org/dist/MRS-Client
-version: 1.0.0
+version: 1.0.1
 x_Dist_Zilla:
   perl:
     version: 5.014002

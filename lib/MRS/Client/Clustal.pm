@@ -10,7 +10,7 @@ use warnings;
 use strict;
 package MRS::Client::Clustal;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use Carp;
 
@@ -104,7 +104,7 @@ sub run {
 #-----------------------------------------------------------------
 package MRS::Client::Clustal::Result;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 sub _new {
     my ($class, $data) = @_;  # $data is a hashref (from $answer->{parameters})
@@ -158,7 +158,7 @@ sub as_string {
 #-----------------------------------------------------------------
 package MRS::Client::Clustal::Sequence;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 sub _new {
     # $data is a hashref (from $answer->{parameters})
@@ -196,7 +196,7 @@ MRS::Client - Clustal invocation and results
 
 =head1 VERSION
 
-version 1.0.0
+version 1.0.1
 
 =head1 NAME
 

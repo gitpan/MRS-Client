@@ -10,7 +10,7 @@ use warnings;
 use strict;
 package MRS::Client::Blast;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use Carp;
 use MRS::Constants;
@@ -91,7 +91,7 @@ sub remove_job {
 #-----------------------------------------------------------------
 package MRS::Client::Blast::Job;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use Carp;
 
@@ -333,7 +333,7 @@ sub results {
 #-----------------------------------------------------------------
 package MRS::Client::Blast::Result;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 use File::Basename;
 
@@ -510,7 +510,7 @@ sub convert2xml {
 #-----------------------------------------------------------------
 package MRS::Client::Blast::Hit;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 sub _new {
     # $data is a hashref (from $answer->{parameters}->{hits})
@@ -577,7 +577,7 @@ sub as_string {
 #-----------------------------------------------------------------
 package MRS::Client::Blast::HSP;
 
-our $VERSION = '1.0.0'; # VERSION
+our $VERSION = '1.0.1'; # VERSION
 
 sub _new {
     my ($class, $data) = @_;  # $data is a hashref (from $answer->{parameters}->{hits})
@@ -646,7 +646,7 @@ MRS::Client - Blast invocation and results
 
 =head1 VERSION
 
-version 1.0.0
+version 1.0.1
 
 =head1 NAME
 

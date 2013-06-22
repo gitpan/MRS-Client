@@ -2,7 +2,7 @@ NAME
     MRS::Client - A SOAP-based client of the MRS Retrieval server
 
 VERSION
-    version 1.0.0
+    version 1.0.1
 
 SYNOPSIS
         # 1. create a client that does all the work:
